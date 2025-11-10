@@ -89,6 +89,7 @@ PY
 - The dataset includes any filing where the `To Organization` is “Protect Lex” **or** the `Location`/`City` contains “Lexington”.
 - Contributor totals load from `public/data/contributor_totals.json`, powering the default totals view and sort on the Contributors page.
 - The contributors page intentionally caps the rendered table at 500 rows for responsiveness—narrow the filters to explore more targeted slices.
+- Use the “Show grouped dates” control on the Contributors page to fan out a filtered set and see per-day totals for each contributor.
 - The recipients page aggregates records by recipient and exposes quick filters for office sought.
 - Click any contributor or recipient to drill into a detail route that lists every matching contribution.
 - Amount totals are net values, so refunds or debt assumptions appear as negative numbers.

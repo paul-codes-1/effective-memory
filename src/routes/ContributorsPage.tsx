@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import SearchInput from '../components/SearchInput';
 import { useContributors } from '../hooks/useContributors';
 import { slugify } from '../data/utils';
+import type { ContributorRecord } from '../data/types';
 
 const formatCurrency = (value: number) =>
   value.toLocaleString('en-US', {
@@ -22,12 +23,16 @@ const ContributorsPage = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('totals');
   const [sortField, setSortField] = useState<SortField>('amount');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [fanOutMode, setFanOutMode] = useState(false);
 
   useEffect(() => {
     if (viewMode === 'totals' && sortField === 'recipient') {
       setSortField('amount');
     }
-  }, [sortField, viewMode]);
+    if (viewMode === 'records' && fanOutMode) {
+      setFanOutMode(false);
+    }
+  }, [fanOutMode, sortField, viewMode]);
 
   const contributionTypes = useMemo(() => {
     return Array.from(new Set(data.map((record) => record.contributionType))).filter(Boolean).sort();
@@ -110,6 +115,49 @@ const ContributorsPage = () => {
     });
     return entries;
   }, [filteredTotals, sortDirection, sortField]);
+
+  const fanOutData = useMemo(() => {
+    if (!fanOutMode || viewMode !== 'totals') {
+      return [];
+    }
+    const contributorKeys = new Set(filteredTotals.map((entry) => entry.key));
+    if (!contributorKeys.size) {
+      return [];
+    }
+
+    const grouped = new Map<
+      string,
+      {
+        dateLabel: string;
+        totalAmount: number;
+        entries: ContributorRecord[];
+      }
+    >();
+
+    data.forEach((record) => {
+      const key = slugify(record.contributorFullName);
+      if (!contributorKeys.has(key)) {
+        return;
+      }
+      const dateLabel = record.receiptDate || 'No receipt date';
+      const group =
+        grouped.get(dateLabel) ??
+        {
+          dateLabel,
+          totalAmount: 0,
+          entries: [],
+        };
+      group.totalAmount += record.amount;
+      group.entries.push(record);
+      grouped.set(dateLabel, group);
+    });
+
+    return Array.from(grouped.values()).sort((a, b) => {
+      const timeA = Date.parse(a.dateLabel) || 0;
+      const timeB = Date.parse(b.dateLabel) || 0;
+      return timeB - timeA;
+    });
+  }, [data, fanOutMode, filteredTotals, viewMode]);
 
   const sortOptions =
     viewMode === 'totals'
@@ -228,36 +276,108 @@ const ContributorsPage = () => {
             </button>
           </div>
         </label>
+        {viewMode === 'totals' && (
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+            <span style={{ fontSize: '0.85rem', color: '#475569', fontWeight: 600 }}>Fan Out</span>
+            <button
+              type="button"
+              className="select"
+              style={{ cursor: 'pointer', width: 'auto' }}
+              onClick={() => setFanOutMode((prev) => !prev)}
+            >
+              {fanOutMode ? 'Hide grouped dates' : 'Show grouped dates'}
+            </button>
+          </label>
+        )}
       </div>
 
       {viewMode === 'totals' ? (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Contributor</th>
-                <th>Total Amount</th>
-                <th>Entries</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedTotals.slice(0, 500).map((entry) => (
-                <tr key={entry.key}>
-                  <td>
-                    <Link to={`/contributors/${entry.key}`}>{entry.fullName}</Link>
-                  </td>
-                  <td>{formatCurrency(entry.totalAmount)}</td>
-                  <td>{entry.contributionCount.toLocaleString()}</td>
+        <>
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Contributor</th>
+                  <th>Total Amount</th>
+                  <th>Entries</th>
                 </tr>
+              </thead>
+              <tbody>
+                {sortedTotals.slice(0, 500).map((entry) => (
+                  <tr key={entry.key}>
+                    <td>
+                      <Link to={`/contributors/${entry.key}`}>{entry.fullName}</Link>
+                    </td>
+                    <td>{formatCurrency(entry.totalAmount)}</td>
+                    <td>{entry.contributionCount.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {sortedTotals.length > 500 && (
+              <p className="subtitle" style={{ marginTop: '0.5rem', padding: '0 1rem 1rem' }}>
+                Showing the first 500 contributors. Use search to refine further.
+              </p>
+            )}
+          </div>
+          {fanOutMode && (
+            <section style={{ marginTop: '2rem' }}>
+              <h3 className="section-title">Grouped by Date</h3>
+              <p className="subtitle">
+                Totals below aggregate every contribution that matches your current filters, grouped by receipt date.
+              </p>
+              {fanOutData.length === 0 && <p className="subtitle">No contributions match your current filters.</p>}
+              {fanOutData.slice(0, 50).map((group) => (
+                <article key={group.dateLabel} className="card" style={{ marginBottom: '1rem' }}>
+                  <div className="flex-between" style={{ alignItems: 'baseline', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div>
+                      <strong>{group.dateLabel}</strong>
+                      <p className="subtitle" style={{ margin: 0 }}>
+                        {group.entries.length.toLocaleString()} entries
+                      </p>
+                    </div>
+                    <span className="badge">{formatCurrency(group.totalAmount)}</span>
+                  </div>
+                  <div className="table-wrapper" style={{ marginTop: '1rem' }}>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Contributor</th>
+                          <th>Recipient</th>
+                          <th>Amount</th>
+                          <th>Type / Mode</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {group.entries.map((record) => (
+                          <tr key={record.id}>
+                            <td>
+                              <Link to={`/contributors/${slugify(record.contributorFullName)}`}>
+                                {record.contributorFullName}
+                              </Link>
+                            </td>
+                            <td>{record.recipientFullName}</td>
+                            <td>{formatCurrency(record.amount)}</td>
+                            <td>
+                              <span className="badge">{record.contributionType || 'Unspecified'}</span>
+                              <br />
+                              <span className="subtitle">{record.contributionMode || '—'}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </article>
               ))}
-            </tbody>
-          </table>
-          {sortedTotals.length > 500 && (
-            <p className="subtitle" style={{ marginTop: '0.5rem', padding: '0 1rem 1rem' }}>
-              Showing the first 500 contributors. Use search to refine further.
-            </p>
+              {fanOutData.length > 50 && (
+                <p className="subtitle">
+                  Showing the first 50 date groups. Refine your search to narrow further.
+                </p>
+              )}
+            </section>
           )}
-        </div>
+        </>
       ) : (
         <>
           <div className="table-wrapper">
