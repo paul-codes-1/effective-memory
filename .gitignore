@@ -1,0 +1,24 @@
+# Node / Vite artifacts
+node_modules/
+dist/
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment + local overrides
+.env
+.env.*
+!.env.example
+
+# AWS Amplify local / generated files
+amplify/#current-cloud-backend/
+amplify/.config/local-*
+amplify/mock-data/
+amplify/backend/.temp/
+amplify/backend/amplify-meta.json
+amplify/backend/awscloudformation/
+amplify/team-provider-info.json
+src/aws-exports.js
+aws-exports.js
