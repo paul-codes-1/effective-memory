@@ -6,7 +6,12 @@ import {
   useMemo,
   useState,
 } from 'react';
-import type { ContributorRecord, ContributorsState, RawContributorRecord } from '../data/types';
+import type {
+  ContributorRecord,
+  ContributorTotalsMap,
+  ContributorsState,
+  RawContributorRecord,
+} from '../data/types';
 
 const ContributorsContext = createContext<ContributorsState | undefined>(undefined);
 
@@ -65,6 +70,7 @@ const mapRecord = (raw: RawContributorRecord, index: number): ContributorRecord 
 
 export const ContributorsProvider = ({ children }: PropsWithChildren) => {
   const [data, setData] = useState<ContributorRecord[]>([]);
+  const [totals, setTotals] = useState<ContributorTotalsMap>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,14 +79,29 @@ export const ContributorsProvider = ({ children }: PropsWithChildren) => {
 
     const load = async () => {
       try {
-        const response = await fetch('/data/contributors.json');
-        if (!response.ok) {
+        const [recordsResponse, totalsResponse] = await Promise.all([
+          fetch('/data/contributors.json'),
+          fetch('/data/contributor_totals.json'),
+        ]);
+        if (!recordsResponse.ok) {
           throw new Error('Failed to load contributors data');
         }
-        const rawData: RawContributorRecord[] = await response.json();
+        if (!totalsResponse.ok) {
+          throw new Error('Failed to load contributor totals');
+        }
+        const rawData: RawContributorRecord[] = await recordsResponse.json();
+        const rawTotals: Record<
+          string,
+          { fullName: string; totalAmount: number; contributionCount: number }
+        > = await totalsResponse.json();
         if (!isMounted) return;
         const mapped = rawData.map(mapRecord);
+        const normalizedTotals = Object.entries(rawTotals).reduce<ContributorTotalsMap>((acc, [key, value]) => {
+          acc[key] = { key, ...value };
+          return acc;
+        }, {});
         setData(mapped);
+        setTotals(normalizedTotals);
         setLoading(false);
       } catch (err) {
         if (!isMounted) return;
@@ -99,10 +120,11 @@ export const ContributorsProvider = ({ children }: PropsWithChildren) => {
   const value = useMemo<ContributorsState>(
     () => ({
       data,
+      totals,
       loading,
       error,
     }),
-    [data, loading, error],
+    [data, totals, loading, error],
   );
 
   return <ContributorsContext.Provider value={value}>{children}</ContributorsContext.Provider>;

@@ -23,6 +23,8 @@ const RecipientsPage = () => {
   const { data, loading, error } = useContributors();
   const [search, setSearch] = useState('');
   const [officeFilter, setOfficeFilter] = useState('all');
+  const [sortField, setSortField] = useState<'amount' | 'recipient'>('amount');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const offices = useMemo(() => {
     return Array.from(new Set(data.map((record) => record.officeSought))).filter(Boolean).sort();
@@ -63,6 +65,20 @@ const RecipientsPage = () => {
     });
   }, [aggregates, officeFilter, search]);
 
+  const sortedAggregates = useMemo(() => {
+    const entries = [...filteredAggregates];
+    entries.sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'amount') {
+        comparison = a.total - b.total;
+      } else {
+        comparison = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+      }
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+    return entries;
+  }, [filteredAggregates, sortDirection, sortField]);
+
   if (loading) {
     return <div className="alert info">Loading recipient rollups…</div>;
   }
@@ -93,6 +109,27 @@ const RecipientsPage = () => {
             ))}
           </select>
         </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <span style={{ fontSize: '0.85rem', color: '#475569', fontWeight: 600 }}>Sort</span>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <select
+              className="select"
+              value={sortField}
+              onChange={(event) => setSortField(event.target.value as 'amount' | 'recipient')}
+            >
+              <option value="amount">Amount</option>
+              <option value="recipient">Recipient</option>
+            </select>
+            <button
+              type="button"
+              className="select"
+              style={{ cursor: 'pointer', width: 'auto' }}
+              onClick={() => setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))}
+            >
+              {sortDirection === 'asc' ? 'Asc' : 'Desc'}
+            </button>
+          </div>
+        </label>
       </div>
 
       <div className="table-wrapper">
@@ -108,7 +145,7 @@ const RecipientsPage = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredAggregates.slice(0, 200).map((entry) => (
+            {sortedAggregates.slice(0, 200).map((entry) => (
               <tr key={entry.name}>
                 <td>
                   <Link to={`/recipients/${slugify(entry.name)}`}>{entry.name}</Link>
@@ -123,7 +160,7 @@ const RecipientsPage = () => {
           </tbody>
         </table>
       </div>
-      {filteredAggregates.length > 200 && (
+      {sortedAggregates.length > 200 && (
         <p className="subtitle" style={{ marginTop: '0.5rem' }}>
           Showing the first 200 recipients by filter. Add search terms to drill deeper.
         </p>

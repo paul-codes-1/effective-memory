@@ -31,8 +31,18 @@ export interface ContributorRecord {
   receiptDate: string;
 }
 
+export interface ContributorTotal {
+  key: string;
+  fullName: string;
+  totalAmount: number;
+  contributionCount: number;
+}
+
+export type ContributorTotalsMap = Record<string, ContributorTotal>;
+
 export interface ContributorsState {
   data: ContributorRecord[];
+  totals: ContributorTotalsMap;
   loading: boolean;
   error: string | null;
 }
