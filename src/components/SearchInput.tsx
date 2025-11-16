@@ -1,3 +1,7 @@
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import SearchIcon from '@mui/icons-material/Search';
+
 interface SearchInputProps {
   label?: string;
   placeholder?: string;
@@ -7,16 +11,23 @@ interface SearchInputProps {
 
 const SearchInput = ({ label, placeholder, value, onChange }: SearchInputProps) => {
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-      {label && <span style={{ fontSize: '0.85rem', color: '#475569', fontWeight: 600 }}>{label}</span>}
-      <input
-        className="input"
-        type="search"
-        placeholder={placeholder}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </label>
+    <TextField
+      size="small"
+      fullWidth
+      label={label}
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      slotProps={{
+        input: {
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon />
+            </InputAdornment>
+          ),
+        },
+      }}
+    />
   );
 };
 

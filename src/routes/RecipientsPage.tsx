@@ -3,6 +3,20 @@ import { Link } from 'react-router-dom';
 import SearchInput from '../components/SearchInput';
 import { useContributors } from '../hooks/useContributors';
 import { slugify } from '../data/utils';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Button from '@mui/material/Button';
+import TableContainer from '@mui/material/TableContainer';
+import Table from '@mui/material/Table';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
+import TableBody from '@mui/material/TableBody';
 
 const formatCurrency = (value: number) =>
   value.toLocaleString('en-US', {
@@ -80,92 +94,89 @@ const RecipientsPage = () => {
   }, [filteredAggregates, sortDirection, sortField]);
 
   if (loading) {
-    return <div className="alert info">Loading recipient rollups…</div>;
+    return <Paper sx={{ p: 2, bgcolor: 'info.light' }}>Loading recipient rollups…</Paper>;
   }
 
   if (error) {
-    return <div className="alert error">{error}</div>;
+    return <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'error.dark' }}>{error}</Paper>;
   }
 
   return (
-    <div>
-      <div className="flex-between" style={{ flexWrap: 'wrap', gap: '1rem' }}>
-        <h2>Recipients</h2>
-        <div className="subtitle">
-          {filteredAggregates.length.toLocaleString()} recipients shown
-        </div>
-      </div>
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Typography variant="h5">Recipients</Typography>
+        <Typography variant="body2" color="text.secondary">{filteredAggregates.length.toLocaleString()} recipients shown</Typography>
+      </Box>
 
-      <div className="filter-row">
-        <SearchInput label="Search" placeholder="Recipient name" value={search} onChange={setSearch} />
-        <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-          <span style={{ fontSize: '0.85rem', color: '#475569', fontWeight: 600 }}>Office</span>
-          <select className="select" value={officeFilter} onChange={(event) => setOfficeFilter(event.target.value)}>
-            <option value="all">All offices</option>
-            {offices.map((office) => (
-              <option key={office} value={office}>
-                {office || 'Not listed'}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-          <span style={{ fontSize: '0.85rem', color: '#475569', fontWeight: 600 }}>Sort</span>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <select
-              className="select"
-              value={sortField}
-              onChange={(event) => setSortField(event.target.value as 'amount' | 'recipient')}
-            >
-              <option value="amount">Amount</option>
-              <option value="recipient">Recipient</option>
-            </select>
-            <button
-              type="button"
-              className="select"
-              style={{ cursor: 'pointer', width: 'auto' }}
-              onClick={() => setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))}
-            >
-              {sortDirection === 'asc' ? 'Asc' : 'Desc'}
-            </button>
-          </div>
-        </label>
-      </div>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' }, gap: 2, my: 1, alignItems: 'center' }}>
+        <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 4' } }}>
+          <SearchInput label="Search" placeholder="Recipient name" value={search} onChange={setSearch} />
+        </Box>
 
-      <div className="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Recipient</th>
-              <th>Office</th>
-              <th>Entries</th>
-              <th>Total Amount</th>
-              <th>Average</th>
-              <th>Sample Location</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 3' } }}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Office</InputLabel>
+            <Select value={officeFilter} label="Office" onChange={(e) => setOfficeFilter(e.target.value)}>
+              <MenuItem value="all">All offices</MenuItem>
+              {offices.map((office) => (
+                <MenuItem key={office} value={office}>{office || 'Not listed'}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 3' } }}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Sort</InputLabel>
+            <Select value={sortField} label="Sort" onChange={(e) => setSortField(e.target.value as 'amount' | 'recipient')}>
+              <MenuItem value="amount">Amount</MenuItem>
+              <MenuItem value="recipient">Recipient</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+
+        <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 2' } }}>
+          <Button fullWidth size="small" variant="outlined" onClick={() => setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))}>
+            {sortDirection === 'asc' ? 'Asc' : 'Desc'}
+          </Button>
+        </Box>
+      </Box>
+
+      <TableContainer component={Paper} sx={{ mt: 1 }}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Recipient</TableCell>
+              <TableCell>Office</TableCell>
+              <TableCell>Entries</TableCell>
+              <TableCell>Total Amount</TableCell>
+              <TableCell>Average</TableCell>
+              <TableCell>Sample Location</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
             {sortedAggregates.slice(0, 200).map((entry) => (
-              <tr key={entry.name}>
-                <td>
+              <TableRow key={entry.name} hover>
+                <TableCell>
                   <Link to={`/recipients/${slugify(entry.name)}`}>{entry.name}</Link>
-                </td>
-                <td>{entry.office || '—'}</td>
-                <td>{entry.count.toLocaleString()}</td>
-                <td>{formatCurrency(entry.total)}</td>
-                <td>{formatCurrency(entry.total / entry.count)}</td>
-                <td>{entry.sampleCity || '—'}</td>
-              </tr>
+                </TableCell>
+                <TableCell>{entry.office || '—'}</TableCell>
+                <TableCell>{entry.count.toLocaleString()}</TableCell>
+                <TableCell>{formatCurrency(entry.total)}</TableCell>
+                <TableCell>{formatCurrency(entry.total / entry.count)}</TableCell>
+                <TableCell>{entry.sampleCity || '—'}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </TableContainer>
+
       {sortedAggregates.length > 200 && (
-        <p className="subtitle" style={{ marginTop: '0.5rem' }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           Showing the first 200 recipients by filter. Add search terms to drill deeper.
-        </p>
+        </Typography>
       )}
-    </div>
+    </Box>
   );
 };
 

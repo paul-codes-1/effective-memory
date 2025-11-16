@@ -4,6 +4,23 @@ import SearchInput from '../components/SearchInput';
 import { useContributors } from '../hooks/useContributors';
 import { slugify } from '../data/utils';
 import type { ContributorRecord } from '../data/types';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Paper from '@mui/material/Paper';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import TableContainer from '@mui/material/TableContainer';
+import Table from '@mui/material/Table';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
+import TableBody from '@mui/material/TableBody';
 
 const formatCurrency = (value: number) =>
   value.toLocaleString('en-US', {
@@ -207,264 +224,247 @@ const ContributorsPage = () => {
         ];
 
   if (loading) {
-    return <div className="alert info">Loading contributor data…</div>;
+    return <Paper sx={{ p: 2, bgcolor: 'info.light' }}>Loading contributor data…</Paper>;
   }
 
   if (error) {
-    return <div className="alert error">{error}</div>;
+    return <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'error.dark' }}>{error}</Paper>;
   }
 
   return (
-    <div>
-      <div className="flex-between" style={{ flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
-        <h2>Contributors</h2>
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ display: 'inline-flex', border: '1px solid #cbd5f5', borderRadius: '999px' }}>
-            <button
-              type="button"
-              onClick={() => setViewMode('totals')}
-              style={{
-                padding: '0.35rem 0.9rem',
-                border: 'none',
-                background: viewMode === 'totals' ? '#1d4ed8' : 'transparent',
-                color: viewMode === 'totals' ? '#fff' : '#1e293b',
-                borderRadius: '999px',
-                cursor: 'pointer',
-              }}
-            >
-              Totals
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('records')}
-              style={{
-                padding: '0.35rem 0.9rem',
-                border: 'none',
-                background: viewMode === 'records' ? '#1d4ed8' : 'transparent',
-                color: viewMode === 'records' ? '#fff' : '#1e293b',
-                borderRadius: '999px',
-                cursor: 'pointer',
-              }}
-            >
-              Records
-            </button>
-          </div>
-          <div className="subtitle">
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Typography variant="h5">Contributors</Typography>
+
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(_, val) => val && setViewMode(val)}
+            size="small"
+            sx={{ bgcolor: 'background.paper', borderRadius: 99 }}
+          >
+            <ToggleButton value="totals">Totals</ToggleButton>
+            <ToggleButton value="records">Records</ToggleButton>
+          </ToggleButtonGroup>
+
+          <Typography variant="body2" color="text.secondary">
             {viewMode === 'totals'
               ? `Showing ${filteredTotals.length.toLocaleString()} of ${Object.keys(totals).length.toLocaleString()} contributors`
               : `Showing ${filteredData.length.toLocaleString()} of ${data.length.toLocaleString()} records`}{' '}
             · <strong>{formatCurrency(totalDisplayedAmount)}</strong>
-          </div>
-        </div>
-      </div>
+          </Typography>
+        </Box>
+      </Box>
 
-      <div className="filter-row">
-        <SearchInput
-          label="Search"
-          placeholder="Contributor, city, office, recipient"
-          value={search}
-          onChange={setSearch}
-        />
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' }, gap: 2, my: 1, alignItems: 'center' }}>
+        <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 4' } }}>
+          <SearchInput label="Search" placeholder="Contributor, city, office, recipient" value={search} onChange={setSearch} />
+        </Box>
+
         {viewMode === 'records' && (
           <>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              <span style={{ fontSize: '0.85rem', color: '#475569', fontWeight: 600 }}>Contribution Type</span>
-              <select className="select" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
-                <option value="all">All types</option>
-                {contributionTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type || 'Unspecified'}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              <span style={{ fontSize: '0.85rem', color: '#475569', fontWeight: 600 }}>Contribution Mode</span>
-              <select className="select" value={modeFilter} onChange={(event) => setModeFilter(event.target.value)}>
-                <option value="all">All modes</option>
-                {contributionModes.map((mode) => (
-                  <option key={mode} value={mode}>
-                    {mode || 'Unspecified'}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 2' } }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Contribution Type</InputLabel>
+                <Select value={typeFilter} label="Contribution Type" onChange={(e) => setTypeFilter(e.target.value)}>
+                  <MenuItem value="all">All types</MenuItem>
+                  {contributionTypes.map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {type || 'Unspecified'}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 2' } }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Contribution Mode</InputLabel>
+                <Select value={modeFilter} label="Contribution Mode" onChange={(e) => setModeFilter(e.target.value)}>
+                  <MenuItem value="all">All modes</MenuItem>
+                  {contributionModes.map((mode) => (
+                    <MenuItem key={mode} value={mode}>
+                      {mode || 'Unspecified'}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
           </>
         )}
-        <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-          <span style={{ fontSize: '0.85rem', color: '#475569', fontWeight: 600 }}>Sort</span>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <select className="select" value={sortField} onChange={(event) => setSortField(event.target.value as SortField)}>
+
+        <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 2' } }}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Sort</InputLabel>
+            <Select value={sortField} label="Sort" onChange={(e) => setSortField(e.target.value as SortField)}>
               {sortOptions.map((option) => (
-                <option key={option.value} value={option.value}>
+                <MenuItem key={option.value} value={option.value}>
                   {option.label}
-                </option>
+                </MenuItem>
               ))}
-            </select>
-            <button
-              type="button"
-              className="select"
-              style={{ cursor: 'pointer', width: 'auto' }}
-              onClick={() => setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))}
-            >
-              {sortDirection === 'asc' ? 'Asc' : 'Desc'}
-            </button>
-          </div>
-        </label>
+            </Select>
+          </FormControl>
+        </Box>
+
+        <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 1' } }}>
+          <Button fullWidth size="small" variant="outlined" onClick={() => setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))}>
+            {sortDirection === 'asc' ? 'Asc' : 'Desc'}
+          </Button>
+        </Box>
+
         {viewMode === 'totals' && (
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-            <span style={{ fontSize: '0.85rem', color: '#475569', fontWeight: 600 }}>Fan Out</span>
-            <button
-              type="button"
-              className="select"
-              style={{ cursor: 'pointer', width: 'auto' }}
-              onClick={() => setFanOutMode((prev) => !prev)}
-            >
+          <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 3' } }}>
+            <Button fullWidth size="small" variant={fanOutMode ? 'contained' : 'outlined'} onClick={() => setFanOutMode((p) => !p)}>
               {fanOutMode ? 'Hide grouped dates' : 'Show grouped dates'}
-            </button>
-          </label>
+            </Button>
+          </Box>
         )}
-      </div>
+      </Box>
 
       {viewMode === 'totals' ? (
         <>
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Contributor</th>
-                  <th>Total Amount</th>
-                  <th>Entries</th>
-                </tr>
-              </thead>
-              <tbody>
+          <TableContainer component={Paper} sx={{ mt: 1 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Contributor</TableCell>
+                  <TableCell>Total Amount</TableCell>
+                  <TableCell>Entries</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {sortedTotals.slice(0, 500).map((entry) => (
-                  <tr key={entry.key}>
-                    <td>
+                  <TableRow key={entry.key} hover>
+                    <TableCell>
                       <Link to={`/contributors/${entry.key}`}>{entry.fullName}</Link>
-                    </td>
-                    <td>{formatCurrency(entry.totalAmount)}</td>
-                    <td>{entry.contributionCount.toLocaleString()}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell>{formatCurrency(entry.totalAmount)}</TableCell>
+                    <TableCell>{entry.contributionCount.toLocaleString()}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-            {sortedTotals.length > 500 && (
-              <p className="subtitle" style={{ marginTop: '0.5rem', padding: '0 1rem 1rem' }}>
-                Showing the first 500 contributors. Use search to refine further.
-              </p>
-            )}
-          </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {sortedTotals.length > 500 && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Showing the first 500 contributors. Use search to refine further.
+            </Typography>
+          )}
+
           {fanOutMode && (
-            <section style={{ marginTop: '2rem' }}>
-              <h3 className="section-title">Grouped by Date</h3>
-              <p className="subtitle">
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="h6">Grouped by Date</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Totals below aggregate every contribution that matches your current filters, grouped by receipt date.
-              </p>
-              {fanOutData.length === 0 && <p className="subtitle">No contributions match your current filters.</p>}
+              </Typography>
+
+              {fanOutData.length === 0 && <Typography variant="body2">No contributions match your current filters.</Typography>}
+
               {fanOutData.slice(0, 50).map((group) => (
-                <article key={group.dateLabel} className="card" style={{ marginBottom: '1rem' }}>
-                  <div className="flex-between" style={{ alignItems: 'baseline', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <div>
-                      <strong>{group.dateLabel}</strong>
-                      <p className="subtitle" style={{ margin: 0 }}>
+                <Paper key={group.dateLabel} sx={{ p: 2, mb: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                    <Box>
+                      <Typography sx={{ fontWeight: 700 }}>{group.dateLabel}</Typography>
+                      <Typography variant="body2" color="text.secondary">
                         {group.entries.length.toLocaleString()} entries
-                      </p>
-                    </div>
-                    <span className="badge">{formatCurrency(group.totalAmount)}</span>
-                  </div>
-                  <div className="table-wrapper" style={{ marginTop: '1rem' }}>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Contributor</th>
-                          <th>Recipient</th>
-                          <th>Amount</th>
-                          <th>Type / Mode</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                      </Typography>
+                    </Box>
+                    <Chip label={formatCurrency(group.totalAmount)} />
+                  </Box>
+
+                  <TableContainer component={Paper} sx={{ mt: 2 }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Contributor</TableCell>
+                          <TableCell>Recipient</TableCell>
+                          <TableCell>Amount</TableCell>
+                          <TableCell>Type / Mode</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
                         {group.entries.map((record) => (
-                          <tr key={record.id}>
-                            <td>
-                              <Link to={`/contributors/${slugify(record.contributorFullName)}`}>
-                                {record.contributorFullName}
-                              </Link>
-                              <span className="badge">{record.occupation || 'Unspecified'}</span>
-                              <span className="badge">{record.employer || 'Unspecified'}</span>
-                            </td>
-                            <td>{record.recipientFullName}</td>
-                            <td>{formatCurrency(record.amount)}</td>
-                            <td>
-                              <span className="badge">{record.contributionType || 'Unspecified'}</span>
-                              <br />
-                              <span className="subtitle">{record.contributionMode || '—'}</span>
-                            </td>
-                          </tr>
+                          <TableRow key={record.id} hover>
+                            <TableCell>
+                              <Link to={`/contributors/${slugify(record.contributorFullName)}`}>{record.contributorFullName}</Link>
+                              <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                <Chip label={record.occupation || 'Unspecified'} size="small" />
+                                <Chip label={record.employer || 'Unspecified'} size="small" />
+                              </Box>
+                            </TableCell>
+                            <TableCell>{record.recipientFullName}</TableCell>
+                            <TableCell>{formatCurrency(record.amount)}</TableCell>
+                            <TableCell>
+                              <Chip label={record.contributionType || 'Unspecified'} size="small" />
+                              <Typography variant="body2" color="text.secondary">{record.contributionMode || '—'}</Typography>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </article>
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Paper>
               ))}
+
               {fanOutData.length > 50 && (
-                <p className="subtitle">
+                <Typography variant="body2" color="text.secondary">
                   Showing the first 50 date groups. Refine your search to narrow further.
-                </p>
+                </Typography>
               )}
-            </section>
+            </Box>
           )}
         </>
       ) : (
         <>
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Contributor</th>
-                  <th>Recipient</th>
-                  <th>Office</th>
-                  <th>Amount</th>
-                  <th>Type / Mode</th>
-                  <th>Location</th>
-                  <th>Receipt Date</th>
-                </tr>
-              </thead>
-              <tbody>
+          <TableContainer component={Paper} sx={{ mt: 1 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Contributor</TableCell>
+                  <TableCell>Recipient</TableCell>
+                  <TableCell>Office</TableCell>
+                  <TableCell>Amount</TableCell>
+                  <TableCell>Type / Mode</TableCell>
+                  <TableCell>Location</TableCell>
+                  <TableCell>Receipt Date</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {sortedRecords.slice(0, 500).map((record) => (
-                  <tr key={record.id}>
-                    <td>
-                      <strong>
-                        <Link to={`/contributors/${slugify(record.contributorFullName)}`}>
-                          {record.contributorFullName}
-                        </Link>
-                      </strong>
-                      <br />
-                      <span className="subtitle">{record.occupation || 'Occupation N/A'}</span>
-                    </td>
-                    <td>{record.recipientFullName}</td>
-                    <td>{record.officeSought || '—'}</td>
-                    <td>{formatCurrency(record.amount)}</td>
-                    <td>
-                      <span className="badge">{record.contributionType || 'Unspecified'}</span>
-                      <br />
-                      <span className="subtitle">{record.contributionMode || '—'}</span>
-                    </td>
-                    <td>{record.city ? `${record.city}, ${record.state}` : record.location || '—'}</td>
-                    <td>{record.receiptDate || '—'}</td>
-                  </tr>
+                  <TableRow key={record.id} hover>
+                    <TableCell>
+                      <Typography sx={{ fontWeight: 700 }}>
+                        <Link to={`/contributors/${slugify(record.contributorFullName)}`}>{record.contributorFullName}</Link>
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {record.occupation || 'Occupation N/A'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>{record.recipientFullName}</TableCell>
+                    <TableCell>{record.officeSought || '—'}</TableCell>
+                    <TableCell>{formatCurrency(record.amount)}</TableCell>
+                    <TableCell>
+                      <Chip label={record.contributionType || 'Unspecified'} size="small" />
+                      <Typography variant="body2" color="text.secondary">{record.contributionMode || '—'}</Typography>
+                    </TableCell>
+                    <TableCell>{record.city ? `${record.city}, ${record.state}` : record.location || '—'}</TableCell>
+                    <TableCell>{record.receiptDate || '—'}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
+
           {sortedRecords.length > 500 && (
-            <p className="subtitle" style={{ marginTop: '0.5rem' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               Showing the first 500 rows. Refine your filters to narrow the results.
-            </p>
+            </Typography>
           )}
         </>
       )}
-    </div>
+    </Box>
   );
 };
 

@@ -2,6 +2,16 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useContributors } from '../hooks/useContributors';
 import { slugify } from '../data/utils';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import TableContainer from '@mui/material/TableContainer';
+import Table from '@mui/material/Table';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
+import TableBody from '@mui/material/TableBody';
 
 const formatCurrency = (value: number) =>
   value.toLocaleString('en-US', {
@@ -27,84 +37,90 @@ const ContributorDetailPage = () => {
   }, [data, slug]);
 
   if (loading) {
-    return <div className="alert info">Loading contributor details…</div>;
+    return <Paper sx={{ p: 2, bgcolor: 'info.light' }}>Loading contributor details…</Paper>;
   }
 
   if (error) {
-    return <div className="alert error">{error}</div>;
+    return <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'error.dark' }}>{error}</Paper>;
   }
 
   if (!contributions.length) {
     return (
-      <div>
-        <p className="alert error">No contributions found for this contributor.</p>
-        <Link to="/contributors">← Back to contributors</Link>
-      </div>
+      <Box>
+        <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'error.dark' }}>No contributions found for this contributor.</Paper>
+        <Box sx={{ mt: 2 }}>
+          <Link to="/contributors">← Back to contributors</Link>
+        </Box>
+      </Box>
     );
   }
 
   return (
-    <div>
-      <Link to="/contributors" className="subtitle">
-        ← Back to contributors
-      </Link>
-      <h2 style={{ marginBottom: '0.4rem' }}>{contributorName}</h2>
-      <p className="subtitle">{recipients.size} recipients · {contributions.length} filings</p>
+    <Box>
+      <Box sx={{ mb: 2 }}>
+        <Link to="/contributors" style={{ textDecoration: 'none' }}>
+          <Typography variant="body2" color="text.secondary">← Back to contributors</Typography>
+        </Link>
+      </Box>
 
-      <div className="card-grid">
-        <article className="card">
-          <p className="stat-label">Total Contributed</p>
-          <p className="stat-value">{formatCurrency(totalAmount)}</p>
-        </article>
-        <article className="card">
-          <p className="stat-label">Recipients</p>
-          <p className="stat-value">{recipients.size}</p>
-          <p className="subtitle">{Array.from(recipients).slice(0, 3).join(', ') || '—'}</p>
-        </article>
-        <article className="card">
-          <p className="stat-label">Offices</p>
-          <p className="stat-value">{offices.size || '—'}</p>
-          <p className="subtitle">{Array.from(offices).slice(0, 3).join(', ') || 'No office listed'}</p>
-        </article>
-      </div>
+      <Typography variant="h4" sx={{ mb: 0.5 }}>{contributorName}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{recipients.size} recipients · {contributions.length} filings</Typography>
 
-      <section>
-        <div className="flex-between">
-          <h3 className="section-title">Contribution History</h3>
-          <span className="badge">{contributions.length.toLocaleString()} entries</span>
-        </div>
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Recipient</th>
-                <th>Office</th>
-                <th>Amount</th>
-                <th>Type / Mode</th>
-                <th>Receipt Date</th>
-              </tr>
-            </thead>
-            <tbody>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3,1fr)' }, gap: 2, mb: 2 }}>
+        <Paper sx={{ p: 2 }}>
+          <Typography variant="overline" color="text.secondary">Total Contributed</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>{formatCurrency(totalAmount)}</Typography>
+        </Paper>
+
+        <Paper sx={{ p: 2 }}>
+          <Typography variant="overline" color="text.secondary">Recipients</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>{recipients.size}</Typography>
+          <Typography variant="body2" color="text.secondary">{Array.from(recipients).slice(0, 3).join(', ') || '—'}</Typography>
+        </Paper>
+
+        <Paper sx={{ p: 2 }}>
+          <Typography variant="overline" color="text.secondary">Offices</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>{offices.size || '—'}</Typography>
+          <Typography variant="body2" color="text.secondary">{Array.from(offices).slice(0, 3).join(', ') || 'No office listed'}</Typography>
+        </Paper>
+      </Box>
+
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="h6">Contribution History</Typography>
+          <Chip label={`${contributions.length.toLocaleString()} entries`} size="small" />
+        </Box>
+        <TableContainer component={Paper}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Recipient</TableCell>
+                <TableCell>Office</TableCell>
+                <TableCell>Amount</TableCell>
+                <TableCell>Type / Mode</TableCell>
+                <TableCell>Receipt Date</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {contributions.map((record) => (
-                <tr key={record.id}>
-                  <td>
+                <TableRow key={record.id} hover>
+                  <TableCell>
                     <Link to={`/recipients/${slugify(record.recipientFullName)}`}>{record.recipientFullName}</Link>
-                  </td>
-                  <td>{record.officeSought || '—'}</td>
-                  <td>{formatCurrency(record.amount)}</td>
-                  <td>
-                    <span className="badge">{record.contributionType || 'Unspecified'}</span>
-                    <br />
-                    <span className="subtitle">{record.contributionMode || '—'}</span>
-                  </td>
-                  <td>{record.receiptDate || '—'}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell>{record.officeSought || '—'}</TableCell>
+                  <TableCell>{formatCurrency(record.amount)}</TableCell>
+                  <TableCell>
+                    <Chip label={record.contributionType || 'Unspecified'} size="small" />
+                    <Typography variant="body2" color="text.secondary">{record.contributionMode || '—'}</Typography>
+                  </TableCell>
+                  <TableCell>{record.receiptDate || '—'}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+    </Box>
   );
 };
 

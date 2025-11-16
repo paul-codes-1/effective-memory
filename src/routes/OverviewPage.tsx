@@ -1,6 +1,16 @@
 import { useMemo } from 'react';
 import { useContributors } from '../hooks/useContributors';
 import type { ContributorRecord } from '../data/types';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import TableContainer from '@mui/material/TableContainer';
+import Table from '@mui/material/Table';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
+import TableBody from '@mui/material/TableBody';
 
 const parseDateValue = (value: string) => {
   const parsed = Date.parse(value);
@@ -80,127 +90,165 @@ const OverviewPage = () => {
   }, [data]);
 
   if (loading) {
-    return <div className="alert info">Loading contributor data…</div>;
+    return (
+      <Paper sx={{ p: 2, bgcolor: 'info.light' }}>
+        Loading contributor data…
+      </Paper>
+    );
   }
 
   if (error) {
-    return <div className="alert error">{error}</div>;
+    return (
+      <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'error.dark' }}>
+        {error}
+      </Paper>
+    );
   }
 
   return (
-    <div>
-      <section className="card-grid">
-        <article className="card">
-          <p className="stat-label">Total Volume</p>
-          <p className="stat-value">{formatCurrency(summary.totalAmount)}</p>
-          <p className="subtitle">Net of credits and refunds</p>
-        </article>
-        <article className="card">
-          <p className="stat-label">Contributions</p>
-          <p className="stat-value">{summary.totalContributions.toLocaleString()}</p>
-          <p className="subtitle">Individual records in the dataset</p>
-        </article>
-        <article className="card">
-          <p className="stat-label">Contributors</p>
-          <p className="stat-value">{summary.uniqueContributors.toLocaleString()}</p>
-          <p className="subtitle">Unique individuals or committees</p>
-        </article>
-        <article className="card">
-          <p className="stat-label">Recipients</p>
-          <p className="stat-value">{summary.uniqueRecipients.toLocaleString()}</p>
-          <p className="subtitle">Campaigns or committees receiving funds</p>
-        </article>
-      </section>
+    <Box>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(4,1fr)' }, gap: 2, mb: 2 }}>
+        <Paper sx={{ p: 2 }} elevation={1}>
+          <Typography variant="overline" color="text.secondary">
+            Total Volume
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            {formatCurrency(summary.totalAmount)}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Net of credits and refunds
+          </Typography>
+        </Paper>
 
-      <section>
-        <div className="flex-between">
-          <h2 className="section-title">Top Recipients</h2>
-          <span className="badge">Top 5 by total amount</span>
-        </div>
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Recipient</th>
-                <th>Office</th>
-                <th>Entries</th>
-                <th>Total Amount</th>
-              </tr>
-            </thead>
-            <tbody>
+        <Paper sx={{ p: 2 }} elevation={1}>
+          <Typography variant="overline" color="text.secondary">
+            Contributions
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            {summary.totalContributions.toLocaleString()}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Individual records in the dataset
+          </Typography>
+        </Paper>
+
+        <Paper sx={{ p: 2 }} elevation={1}>
+          <Typography variant="overline" color="text.secondary">
+            Contributors
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            {summary.uniqueContributors.toLocaleString()}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Unique individuals or committees
+          </Typography>
+        </Paper>
+
+        <Paper sx={{ p: 2 }} elevation={1}>
+          <Typography variant="overline" color="text.secondary">
+            Recipients
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            {summary.uniqueRecipients.toLocaleString()}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Campaigns or committees receiving funds
+          </Typography>
+        </Paper>
+      </Box>
+
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="h6">Top Recipients</Typography>
+          <Chip label="Top 5 by total amount" size="small" />
+        </Box>
+        <TableContainer component={Paper} sx={{ mb: 2 }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Recipient</TableCell>
+                <TableCell>Office</TableCell>
+                <TableCell>Entries</TableCell>
+                <TableCell>Total Amount</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {topRecipients.map((recipient) => (
-                <tr key={recipient.name}>
-                  <td>{recipient.name}</td>
-                  <td>{recipient.office || '—'}</td>
-                  <td>{recipient.count.toLocaleString()}</td>
-                  <td>{formatCurrency(recipient.total)}</td>
-                </tr>
+                <TableRow key={recipient.name}>
+                  <TableCell>{recipient.name}</TableCell>
+                  <TableCell>{recipient.office || '—'}</TableCell>
+                  <TableCell>{recipient.count.toLocaleString()}</TableCell>
+                  <TableCell>{formatCurrency(recipient.total)}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
 
-      <section>
-        <div className="flex-between">
-          <h2 className="section-title">Active Locations</h2>
-          <span className="badge">Top 5 by number of filings</span>
-        </div>
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>City</th>
-                <th>Entries</th>
-                <th>Total Amount</th>
-              </tr>
-            </thead>
-            <tbody>
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="h6">Active Locations</Typography>
+          <Chip label="Top 5 by number of filings" size="small" />
+        </Box>
+        <TableContainer component={Paper} sx={{ mb: 2 }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>City</TableCell>
+                <TableCell>Entries</TableCell>
+                <TableCell>Total Amount</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {topLocations.map((loc) => (
-                <tr key={loc.location}>
-                  <td>{loc.location}</td>
-                  <td>{loc.count.toLocaleString()}</td>
-                  <td>{formatCurrency(loc.total)}</td>
-                </tr>
+                <TableRow key={loc.location}>
+                  <TableCell>{loc.location}</TableCell>
+                  <TableCell>{loc.count.toLocaleString()}</TableCell>
+                  <TableCell>{formatCurrency(loc.total)}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
 
-      <section>
-        <div className="flex-between">
-          <h2 className="section-title">Most Recent Filings</h2>
-          <span className="badge">Latest 6 entries</span>
-        </div>
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Contributor</th>
-                <th>Recipient</th>
-                <th>Amount</th>
-                <th>Receipt Date</th>
-              </tr>
-            </thead>
-            <tbody>
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="h6">Most Recent Filings</Typography>
+          <Chip label="Latest 6 entries" size="small" />
+        </Box>
+        <TableContainer component={Paper}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Contributor</TableCell>
+                <TableCell>Recipient</TableCell>
+                <TableCell>Amount</TableCell>
+                <TableCell>Receipt Date</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {recentContributions.map((record) => (
-                <tr key={record.id}>
-                  <td>
-                    <strong>{record.contributorFullName}</strong>
-                    <br />
-                    <span className="subtitle">{record.city ? `${record.city}, ${record.state}` : record.location}</span>
-                  </td>
-                  <td>{record.recipientFullName}</td>
-                  <td>{formatCurrency(record.amount)}</td>
-                  <td>{record.receiptDate || '—'}</td>
-                </tr>
+                <TableRow key={record.id}>
+                  <TableCell>
+                    <Typography component="div" sx={{ fontWeight: 700 }}>
+                      {record.contributorFullName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {record.city ? `${record.city}, ${record.state}` : record.location}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{record.recipientFullName}</TableCell>
+                  <TableCell>{formatCurrency(record.amount)}</TableCell>
+                  <TableCell>{record.receiptDate || '—'}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+    </Box>
   );
 };
 
