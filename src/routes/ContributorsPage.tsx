@@ -66,13 +66,47 @@ const ContributorsPage = () => {
     });
   }, [data, modeFilter, searchValue, typeFilter]);
 
+  const contributorEmployers = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    data.forEach((record) => {
+      if (!record.contributorFullName) {
+        return;
+      }
+      const key = slugify(record.contributorFullName);
+      if (!key) {
+        return;
+      }
+      if (!map.has(key)) {
+        map.set(key, new Set());
+      }
+      if (record.employer) {
+        map.get(key)!.add(record.employer.toLowerCase());
+      }
+    });
+    return map;
+  }, [data]);
+
   const filteredTotals = useMemo(() => {
     const entries = Object.values(totals);
     if (!searchValue) {
       return entries;
     }
-    return entries.filter((entry) => entry.fullName.toLowerCase().includes(searchValue));
-  }, [searchValue, totals]);
+    return entries.filter((entry) => {
+      if (entry.fullName.toLowerCase().includes(searchValue)) {
+        return true;
+      }
+      const employers = contributorEmployers.get(entry.key);
+      if (!employers) {
+        return false;
+      }
+      for (const employer of employers) {
+        if (employer.includes(searchValue)) {
+          return true;
+        }
+      }
+      return false;
+    });
+  }, [contributorEmployers, searchValue, totals]);
 
   const totalDisplayedAmount = useMemo(() => {
     if (viewMode === 'totals') {
