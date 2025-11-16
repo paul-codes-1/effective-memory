@@ -53,6 +53,7 @@ const ContributorsPage = () => {
             record.city,
             record.state,
             record.officeSought,
+            record.employer,
           ]
             .filter(Boolean)
             .some((field) => field.toLowerCase().includes(searchValue))
@@ -355,6 +356,8 @@ const ContributorsPage = () => {
                               <Link to={`/contributors/${slugify(record.contributorFullName)}`}>
                                 {record.contributorFullName}
                               </Link>
+                              <span className="badge">{record.occupation || 'Unspecified'}</span>
+                              <span className="badge">{record.employer || 'Unspecified'}</span>
                             </td>
                             <td>{record.recipientFullName}</td>
                             <td>{formatCurrency(record.amount)}</td>
