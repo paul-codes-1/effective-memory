@@ -29,6 +29,10 @@ export interface ContributorRecord {
   otherOccupation: string;
   employer: string;
   receiptDate: string;
+  identityKey: string;
+  isAnonymous: boolean;
+  isNameMissing: boolean;
+  attributionNote: string | null;
 }
 
 export interface ContributorTotal {

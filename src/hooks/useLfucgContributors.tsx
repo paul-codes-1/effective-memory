@@ -12,6 +12,7 @@ import type {
   ContributorsState,
   RawContributorRecord,
 } from '../data/types';
+import { slugify } from '../data/utils';
 
 const LfucgContributorsContext = createContext<ContributorsState | undefined>(undefined);
 
@@ -35,16 +36,27 @@ const mapRecord = (raw: RawContributorRecord, index: number): ContributorRecord 
   const contributorLastName = normalize(raw['Contributor Last Name']);
   const recipientFirstName = normalize(raw['Recipient First Name']);
   const recipientLastName = normalize(raw['Recipient Last Name']);
+  const orgName = normalize(raw['From Organization Name']);
+  const contributionType = normalize(raw['Contribution Type']);
   const contributorFullName =
     buildFullName(contributorFirstName, contributorLastName) ||
-    normalize(raw['From Organization Name']) ||
-    'Unknown contributor';
+    orgName ||
+    (contributionType === 'ANONYMOUS' ? 'Anonymous' : 'Name unavailable');
   const recipientFullName = buildFullName(recipientFirstName, recipientLastName) || normalize(raw['To Organization']) || 'Unknown recipient';
+
+  const identityKey = slugify(contributorFullName) || `missing-${index}`;
+  const isAnonymous = contributionType === 'ANONYMOUS';
+  const isNameMissing = !buildFullName(contributorFirstName, contributorLastName) && !orgName;
+  const attributionNote = isAnonymous
+    ? 'Filed as anonymous per campaign finance report.'
+    : isNameMissing
+    ? 'Original filing did not include a contributor name.'
+    : null;
 
   return {
     id: `${index}-${contributorFullName}-${recipientFullName}-${normalize(raw['Receipt Date'])}`,
     toOrganization: normalize(raw['To Organization']),
-    fromOrganizationName: normalize(raw['From Organization Name']),
+    fromOrganizationName: orgName,
     contributorFirstName,
     contributorLastName,
     contributorFullName,
@@ -62,12 +74,16 @@ const mapRecord = (raw: RawContributorRecord, index: number): ContributorRecord 
     state: normalize(raw.State),
     zip: normalize(raw.Zip),
     amount: parseAmount(raw.Amount),
-    contributionType: normalize(raw['Contribution Type']),
+    contributionType,
     contributionMode: normalize(raw['Contribution Mode']),
     occupation: normalize(raw.Occupation),
     otherOccupation: normalize(raw['Other Occupation']),
     employer: normalize(raw.Employer),
     receiptDate: normalize(raw['Receipt Date']),
+    identityKey,
+    isAnonymous,
+    isNameMissing,
+    attributionNote,
   };
 };
 
@@ -94,7 +110,7 @@ export const LfucgContributorsProvider = ({ children }: PropsWithChildren) => {
         // Calculate totals from the data
         const totalsMap: ContributorTotalsMap = {};
         mapped.forEach((record) => {
-          const key = record.contributorFullName.toLowerCase().replace(/\s+/g, '-');
+          const key = record.identityKey;
           if (!totalsMap[key]) {
             totalsMap[key] = {
               key,
@@ -144,4 +160,3 @@ export const useLfucgContributors = () => {
   }
   return context;
 };
-

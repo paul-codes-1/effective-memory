@@ -502,6 +502,14 @@ const LfucgContributorsPage = () => {
                       <Typography variant="body2" color="text.secondary">
                         {record.occupation || 'Occupation N/A'}
                       </Typography>
+                      {(record.isAnonymous || record.isNameMissing) && (
+                        <Chip
+                          label={record.isAnonymous ? 'Anonymous filing' : 'Name unavailable'}
+                          size="small"
+                          color="warning"
+                          sx={{ mt: 0.5 }}
+                        />
+                      )}
                     </TableCell>
                     <TableCell>{record.recipientFullName}</TableCell>
                     <TableCell>{record.officeSought || '—'}</TableCell>

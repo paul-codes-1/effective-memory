@@ -15,6 +15,37 @@ import TableCell from '@mui/material/TableCell';
 import TableBody from '@mui/material/TableBody';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import useTableSort from '../../hooks/useTableSort';
+import Alert from '@mui/material/Alert';
+
+const KREF_CANDIDATE_URL = 'https://secure.kentucky.gov/kref/publicsearch/ToCandidateSearch';
+const buildKrefLink = (params: { firstName?: string; lastName?: string }) => {
+  const searchParams = new URLSearchParams({
+    PageIndex: '0',
+    ReportingFinancialStatementId: '',
+    CandidateFirstName: params.firstName?.toLowerCase() || '',
+    CandidateLastName: params.lastName?.toLowerCase() || '',
+    ElectionDate: '5/19/2026',
+    ElectionType: '',
+    FirstName: '',
+    LastName: '',
+    FromOrganizationName: '',
+    City: '',
+    State: '',
+    Zip: '',
+    Employer: '',
+    Occupation: '',
+    OtherOccupation: '',
+    MinAmount: '',
+    MaxAmount: '',
+    MinimalDate: '',
+    MaximalDate: '',
+    ContributionMode: '',
+    ContributionSearchType: 'Candidate',
+    PageSize: '10',
+    ReportId: '',
+  });
+  return `${KREF_CANDIDATE_URL}?${searchParams.toString()}`;
+};
 
 const formatCurrency = (value: number) =>
   value.toLocaleString('en-US', {
@@ -28,16 +59,29 @@ const LfucgRecipientDetailPage = () => {
   const { data, loading, error } = useLfucgContributors();
   const sort = useTableSort<'contributor' | 'amount' | 'location' | 'date'>('amount');
 
-  const { contributions, recipientName, totalAmount, contributors, offices } = useMemo(() => {
+  const { contributions, recipientName, totalAmount, contributors, offices, attributionNotes, krefLink } = useMemo(() => {
     if (!slug) {
-      return { contributions: [], recipientName: '', totalAmount: 0, contributors: new Set<string>(), offices: new Set<string>() };
+      return {
+        contributions: [],
+        recipientName: '',
+        totalAmount: 0,
+        contributors: new Set<string>(),
+        offices: new Set<string>(),
+        attributionNotes: new Set<string>(),
+        krefLink: buildKrefLink({}),
+      };
     }
     const filtered = data.filter((record) => slugify(record.recipientFullName) === slug);
     const name = filtered[0]?.recipientFullName || slug.replace(/-/g, ' ');
+    const primary = filtered[0];
     const total = filtered.reduce((sum, record) => sum + record.amount, 0);
     const contributors = new Set(filtered.map((record) => record.contributorFullName).filter(Boolean));
     const offices = new Set(filtered.map((record) => record.officeSought).filter(Boolean));
-    return { contributions: filtered, recipientName: name, totalAmount: total, contributors, offices };
+    const attributionNotes = new Set(filtered.map((record) => record.attributionNote).filter(Boolean) as string[]);
+    const firstName = primary?.recipientFirstName || name.split(' ').slice(0, -1).join(' ');
+    const lastName = primary?.recipientLastName || name.split(' ').slice(-1).join(' ');
+    const krefLink = buildKrefLink({ firstName, lastName });
+    return { contributions: filtered, recipientName: name, totalAmount: total, contributors, offices, attributionNotes, krefLink };
   }, [data, slug]);
 
   const sortedContributions = useMemo(() => {
@@ -86,7 +130,7 @@ const LfucgRecipientDetailPage = () => {
       <Box>
         <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'error.dark' }}>No filings found for this recipient.</Paper>
         <Box sx={{ mt: 2 }}>
-          <Link to="/recipients">← Back to recipients</Link>
+          <Link to="/lfucg/recipients">← Back to recipients</Link>
         </Box>
       </Box>
     );
@@ -94,10 +138,14 @@ const LfucgRecipientDetailPage = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
         <Link to="/lfucg/recipients" style={{ textDecoration: 'none' }}>
+
           <Typography variant="body2" color="text.secondary">← Back to recipients</Typography>
         </Link>
+        <Button variant="outlined" size="small" component="a" href={krefLink} target="_blank" rel="noreferrer">
+          Open KREF search
+        </Button>
       </Box>
 
       <Typography variant="h4" sx={{ mb: 0.5 }}>{recipientName}</Typography>
@@ -120,6 +168,12 @@ const LfucgRecipientDetailPage = () => {
           <Typography variant="h6" sx={{ fontWeight: 700 }}>{offices.size ? Array.from(offices)[0] : '—'}</Typography>
         </Paper>
       </Box>
+
+      {/*{attributionNotes.size > 0 && (*/}
+      {/*  <Alert severity="info" sx={{ mb: 2 }}>*/}
+      {/*    {Array.from(attributionNotes).join(' ')}*/}
+      {/*  </Alert>*/}
+      {/*)}*/}
 
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -180,6 +234,17 @@ const LfucgRecipientDetailPage = () => {
                   <TableCell>
                     <Link to={`/lfucg/contributors/${slugify(record.contributorFullName)}`}>{record.contributorFullName}</Link>
                     <Typography variant="body2" color="text.secondary">{record.occupation || 'Occupation N/A'}</Typography>
+                    {(record.isAnonymous || record.isNameMissing) && (
+                      <Chip
+                        label={record.isAnonymous ? 'Anonymous filing' : 'Name unavailable'}
+                        size="small"
+                        color="warning"
+                        sx={{ mt: 0.5 }}
+                      />
+                    )}
+                    {record.contributionType === 'CANDIDATE' && (
+                      <Chip label="Candidate contribution" size="small" color="info" sx={{ mt: 0.5 }} />
+                    )}
                   </TableCell>
                   <TableCell>{formatCurrency(record.amount)}</TableCell>
                   <TableCell>
