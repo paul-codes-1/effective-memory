@@ -29,9 +29,10 @@ const formatCurrency = (value: number) =>
 interface RecipientAggregate {
   name: string;
   total: number;
-  count: number; // number of records / contributions
+  count: number;
   office: string;
-  sampleCity: string;
+  topEmployer: string;
+  topEmployerAmount: number;
 }
 
 const LfucgRecipientsPage = () => {
@@ -58,7 +59,11 @@ const LfucgRecipientsPage = () => {
   }, [data]);
 
   const aggregates = useMemo<RecipientAggregate[]>(() => {
-    const map = new Map<string, RecipientAggregate>();
+    type AggregateWithMeta = RecipientAggregate & {
+      employerCounts: Record<string, number>;
+      employerAmounts: Record<string, number>;
+    };
+    const map = new Map<string, AggregateWithMeta>();
 
     data.forEach((record) => {
       const key = record.recipientFullName || 'Unknown recipient';
@@ -68,20 +73,33 @@ const LfucgRecipientsPage = () => {
           total: 0,
           count: 0,
           office: record.officeSought,
-          sampleCity: record.city ? `${record.city}, ${record.state}` : record.location,
+          topEmployer: '',
+          topEmployerAmount: 0,
+          employerCounts: {},
+          employerAmounts: {},
         };
       existing.total += record.amount;
       existing.count += 1;
       if (!existing.office && record.officeSought) {
         existing.office = record.officeSought;
       }
-      if (!existing.sampleCity) {
-        existing.sampleCity = record.city ? `${record.city}, ${record.state}` : record.location;
+
+      const employer = record.employer?.trim();
+      if (employer && employer.toLowerCase() !== 'retired') {
+        existing.employerCounts[employer] = (existing.employerCounts[employer] ?? 0) + 1;
+        existing.employerAmounts[employer] = (existing.employerAmounts[employer] ?? 0) + record.amount;
+        const currentTopEmployerAmount = existing.topEmployer ? existing.employerAmounts[existing.topEmployer] ?? 0 : 0;
+        if (existing.employerAmounts[employer] > currentTopEmployerAmount) {
+          existing.topEmployer = employer;
+          existing.topEmployerAmount = existing.employerAmounts[employer];
+        }
       }
       map.set(key, existing);
     });
 
-    return Array.from(map.values()).sort((a, b) => b.total - a.total);
+    return Array.from(map.values())
+      .map(({ employerCounts, employerAmounts, ...rest }) => rest)
+      .sort((a, b) => b.total - a.total);
   }, [data]);
 
   const filteredAggregates = useMemo(() => {
@@ -218,7 +236,7 @@ const LfucgRecipientsPage = () => {
                 </TableSortLabel>
               </TableCell>
               <TableCell>Average</TableCell>
-              <TableCell>Sample Location</TableCell>
+              <TableCell>Top Employer</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -231,7 +249,11 @@ const LfucgRecipientsPage = () => {
                 <TableCell>{entry.count.toLocaleString()}</TableCell>
                 <TableCell>{formatCurrency(entry.total)}</TableCell>
                 <TableCell>{formatCurrency(entry.total / entry.count)}</TableCell>
-                <TableCell>{entry.sampleCity || '—'}</TableCell>
+                <TableCell>
+                  {entry.topEmployer
+                    ? `${entry.topEmployer} (${formatCurrency(entry.topEmployerAmount)})`
+                    : '—'}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -248,4 +270,3 @@ const LfucgRecipientsPage = () => {
 };
 
 export default LfucgRecipientsPage;
-
