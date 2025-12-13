@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useLfucgContributors } from '../../hooks/useLfucgContributors';
+import { slugify } from '../../data/utils';
 import type { ContributorRecord } from '../../data/types';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
@@ -271,7 +273,9 @@ const LfucgOverviewPage = () => {
             <TableBody>
               {sortedTopRecipients.map((recipient) => (
                 <TableRow key={recipient.name} hover>
-                  <TableCell sx={{ fontWeight: 500 }}>{recipient.name}</TableCell>
+                  <TableCell sx={{ fontWeight: 500 }}>
+                    <Link to={`/lfucg/recipients/${slugify(recipient.name)}`}>{recipient.name}</Link>
+                  </TableCell>
                   <TableCell>{recipient.office || '—'}</TableCell>
                   <TableCell>{recipient.count.toLocaleString()}</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>{formatCurrency(recipient.total)}</TableCell>
@@ -385,13 +389,15 @@ const LfucgOverviewPage = () => {
                 <TableRow key={record.id} hover>
                   <TableCell>
                     <Typography component="div" sx={{ fontWeight: 600 }}>
-                      {record.contributorFullName}
+                      <Link to={`/lfucg/contributors/${slugify(record.contributorFullName)}`}>{record.contributorFullName}</Link>
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {record.city ? `${record.city}, ${record.state}` : record.location}
                     </Typography>
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 500 }}>{record.recipientFullName}</TableCell>
+                  <TableCell sx={{ fontWeight: 500 }}>
+                    <Link to={`/lfucg/recipients/${slugify(record.recipientFullName)}`}>{record.recipientFullName}</Link>
+                  </TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>{formatCurrency(record.amount)}</TableCell>
                   <TableCell>{record.receiptDate || '—'}</TableCell>
                 </TableRow>
