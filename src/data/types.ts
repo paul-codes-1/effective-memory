@@ -1,5 +1,5 @@
 export interface RawContributorRecord {
-  [key: string]: string | undefined;
+  [key: string]: string | number | undefined;
 }
 
 export interface ContributorRecord {

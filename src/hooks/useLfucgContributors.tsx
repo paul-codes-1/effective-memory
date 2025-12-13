@@ -13,7 +13,7 @@ import type {
   RawContributorRecord,
 } from '../data/types';
 
-const ContributorsContext = createContext<ContributorsState | undefined>(undefined);
+const LfucgContributorsContext = createContext<ContributorsState | undefined>(undefined);
 
 const normalize = (value?: string | number) => {
   if (value === undefined || value === null) return '';
@@ -71,7 +71,7 @@ const mapRecord = (raw: RawContributorRecord, index: number): ContributorRecord 
   };
 };
 
-export const ContributorsProvider = ({ children }: PropsWithChildren) => {
+export const LfucgContributorsProvider = ({ children }: PropsWithChildren) => {
   const [data, setData] = useState<ContributorRecord[]>([]);
   const [totals, setTotals] = useState<ContributorTotalsMap>({});
   const [loading, setLoading] = useState(true);
@@ -82,29 +82,33 @@ export const ContributorsProvider = ({ children }: PropsWithChildren) => {
 
     const load = async () => {
       try {
-        const [recordsResponse, totalsResponse] = await Promise.all([
-          fetch('/data/contributors.json'),
-          fetch('/data/contributor_totals.json'),
-        ]);
+        const recordsResponse = await fetch('/data/2026-lfucg-primary-contributions.json');
         if (!recordsResponse.ok) {
-          throw new Error('Failed to load contributors data');
-        }
-        if (!totalsResponse.ok) {
-          throw new Error('Failed to load contributor totals');
+          throw new Error('Failed to load LFUCG 2026 Primary data');
         }
         const rawData: RawContributorRecord[] = await recordsResponse.json();
-        const rawTotals: Record<
-          string,
-          { fullName: string; totalAmount: number; contributionCount: number }
-        > = await totalsResponse.json();
         if (!isMounted) return;
+
         const mapped = rawData.map(mapRecord);
-        const normalizedTotals = Object.entries(rawTotals).reduce<ContributorTotalsMap>((acc, [key, value]) => {
-          acc[key] = { key, ...value };
-          return acc;
-        }, {});
+
+        // Calculate totals from the data
+        const totalsMap: ContributorTotalsMap = {};
+        mapped.forEach((record) => {
+          const key = record.contributorFullName.toLowerCase().replace(/\s+/g, '-');
+          if (!totalsMap[key]) {
+            totalsMap[key] = {
+              key,
+              fullName: record.contributorFullName,
+              totalAmount: 0,
+              contributionCount: 0,
+            };
+          }
+          totalsMap[key].totalAmount += record.amount;
+          totalsMap[key].contributionCount += 1;
+        });
+
         setData(mapped);
-        setTotals(normalizedTotals);
+        setTotals(totalsMap);
         setLoading(false);
       } catch (err) {
         if (!isMounted) return;
@@ -130,13 +134,14 @@ export const ContributorsProvider = ({ children }: PropsWithChildren) => {
     [data, totals, loading, error],
   );
 
-  return <ContributorsContext.Provider value={value}>{children}</ContributorsContext.Provider>;
+  return <LfucgContributorsContext.Provider value={value}>{children}</LfucgContributorsContext.Provider>;
 };
 
-export const useContributors = () => {
-  const context = useContext(ContributorsContext);
+export const useLfucgContributors = () => {
+  const context = useContext(LfucgContributorsContext);
   if (!context) {
-    throw new Error('useContributors must be used within ContributorsProvider');
+    throw new Error('useLfucgContributors must be used within LfucgContributorsProvider');
   }
   return context;
 };
+
