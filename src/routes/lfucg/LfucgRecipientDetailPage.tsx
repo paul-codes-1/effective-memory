@@ -169,12 +169,6 @@ const LfucgRecipientDetailPage = () => {
         </Paper>
       </Box>
 
-      {/*{attributionNotes.size > 0 && (*/}
-      {/*  <Alert severity="info" sx={{ mb: 2 }}>*/}
-      {/*    {Array.from(attributionNotes).join(' ')}*/}
-      {/*  </Alert>*/}
-      {/*)}*/}
-
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
           <Typography variant="h6">All Contributions</Typography>
@@ -234,6 +228,9 @@ const LfucgRecipientDetailPage = () => {
                   <TableCell>
                     <Link to={`/lfucg/contributors/${slugify(record.contributorFullName)}`}>{record.contributorFullName}</Link>
                     <Typography variant="body2" color="text.secondary">{record.occupation || 'Occupation N/A'}</Typography>
+                    {record.employer && (
+                      <Chip label={record.employer} size="small" color="primary" variant="outlined" sx={{ mt: 0.5 }} />
+                    )}
                     {(record.isAnonymous || record.isNameMissing) && (
                       <Chip
                         label={record.isAnonymous ? 'Anonymous filing' : 'Name unavailable'}

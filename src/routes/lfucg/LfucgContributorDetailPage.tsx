@@ -57,7 +57,7 @@ const LfucgContributorDetailPage = () => {
   const { data, loading, error } = useLfucgContributors();
   const sort = useTableSort<'recipient' | 'office' | 'amount' | 'date'>('amount');
 
-  const { contributions, contributorName, totalAmount, offices, recipients, attributionNote, krefLink } = useMemo(() => {
+  const { contributions, contributorName, totalAmount, offices, recipients, attributionNote, krefLink, employers, occupations } = useMemo(() => {
     if (!slug) {
       return {
         contributions: [],
@@ -67,6 +67,8 @@ const LfucgContributorDetailPage = () => {
         recipients: new Set<string>(),
         attributionNote: null,
         krefLink: buildKrefLink({}),
+        employers: new Set<string>(),
+        occupations: new Set<string>(),
       };
     }
     const filtered = data.filter((record) => slugify(record.contributorFullName) === slug);
@@ -76,12 +78,14 @@ const LfucgContributorDetailPage = () => {
     const offices = new Set(filtered.map((record) => record.officeSought).filter(Boolean));
     const recipients = new Set(filtered.map((record) => record.recipientFullName).filter(Boolean));
     const attributionNote = primary?.attributionNote ?? null;
+    const employers = new Set(filtered.map((record) => record.employer).filter(Boolean));
+    const occupations = new Set(filtered.map((record) => record.occupation).filter(Boolean));
     const krefLink = buildKrefLink({
       firstName: primary?.contributorFirstName,
       lastName: primary?.contributorLastName,
       orgName: primary?.fromOrganizationName,
     });
-    return { contributions: filtered, contributorName: name, totalAmount: total, offices, recipients, attributionNote, krefLink };
+    return { contributions: filtered, contributorName: name, totalAmount: total, offices, recipients, attributionNote, krefLink, employers, occupations };
   }, [data, slug]);
 
   const sortedContributions = useMemo(() => {
@@ -141,6 +145,16 @@ const LfucgContributorDetailPage = () => {
           Open KREF search
         </Button>
       </Box>
+      {(occupations.size > 0 || employers.size > 0) && (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+          {Array.from(occupations).map((occupation) => (
+            <Chip key={`occ-${occupation}`} label={occupation} size="small" />
+          ))}
+          {Array.from(employers).map((employer) => (
+            <Chip key={`emp-${employer}`} label={employer} size="small" color="primary" variant="outlined" />
+          ))}
+        </Box>
+      )}
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{recipients.size} recipients · {contributions.length} filings</Typography>
       {(sortedContributions[0]?.isAnonymous || sortedContributions[0]?.isNameMissing) && (

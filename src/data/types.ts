@@ -40,6 +40,8 @@ export interface ContributorTotal {
   fullName: string;
   totalAmount: number;
   contributionCount: number;
+  occupation?: string;
+  employer?: string;
 }
 
 export type ContributorTotalsMap = Record<string, ContributorTotal>;

@@ -117,10 +117,19 @@ export const LfucgContributorsProvider = ({ children }: PropsWithChildren) => {
               fullName: record.contributorFullName,
               totalAmount: 0,
               contributionCount: 0,
+              occupation: record.occupation,
+              employer: record.employer,
             };
           }
-          totalsMap[key].totalAmount += record.amount;
-          totalsMap[key].contributionCount += 1;
+          const entry = totalsMap[key];
+          entry.totalAmount += record.amount;
+          entry.contributionCount += 1;
+          if (!entry.occupation && record.occupation) {
+            entry.occupation = record.occupation;
+          }
+          if (!entry.employer && record.employer) {
+            entry.employer = record.employer;
+          }
         });
 
         setData(mapped);

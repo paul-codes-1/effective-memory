@@ -73,11 +73,8 @@ const LfucgContributorsPage = () => {
       const matchesSearch = searchValue
         ? [
             record.contributorFullName,
-            record.recipientFullName,
-            record.city,
-            record.state,
-            record.officeSought,
             record.employer,
+            record.occupation,
           ]
             .filter(Boolean)
             .some((field) => field.toLowerCase().includes(searchValue))
@@ -93,13 +90,10 @@ const LfucgContributorsPage = () => {
   const contributorEmployers = useMemo(() => {
     const map = new Map<string, Set<string>>();
     data.forEach((record) => {
-      if (!record.contributorFullName) {
+      if (!record.identityKey) {
         return;
       }
-      const key = slugify(record.contributorFullName);
-      if (!key) {
-        return;
-      }
+      const key = record.identityKey;
       if (!map.has(key)) {
         map.set(key, new Set());
       }
@@ -272,7 +266,7 @@ const LfucgContributorsPage = () => {
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' }, gap: 2, my: 1, alignItems: 'center' }}>
         <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 4' } }}>
-          <SearchInput label="Search" placeholder="Contributor, city, office, recipient" value={search} onChange={setSearch} />
+          <SearchInput label="Search" placeholder="Name, employer, or occupation" value={search} onChange={setSearch} />
         </Box>
 
         {viewMode === 'records' && (
@@ -375,6 +369,10 @@ const LfucgContributorsPage = () => {
                   <TableRow key={entry.key} hover>
                     <TableCell>
                       <Link to={`/lfucg/contributors/${entry.key}`}>{entry.fullName}</Link>
+                      <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Chip label={entry.occupation || 'Unspecified'} size="small" />
+                        <Chip label={entry.employer || 'Unspecified'} size="small" />
+                      </Box>
                     </TableCell>
                     <TableCell>{formatCurrency(entry.totalAmount)}</TableCell>
                     <TableCell>{entry.contributionCount.toLocaleString()}</TableCell>
@@ -502,6 +500,10 @@ const LfucgContributorsPage = () => {
                       <Typography variant="body2" color="text.secondary">
                         {record.occupation || 'Occupation N/A'}
                       </Typography>
+                      <Box sx={{ mt: 0.5, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        {record.occupation && <Chip label={record.occupation} size="small" />}
+                        {record.employer && <Chip label={record.employer} size="small" color="primary" variant="outlined" />}
+                      </Box>
                       {(record.isAnonymous || record.isNameMissing) && (
                         <Chip
                           label={record.isAnonymous ? 'Anonymous filing' : 'Name unavailable'}
