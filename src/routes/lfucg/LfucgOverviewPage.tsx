@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useLfucgContributors } from '../../hooks/useLfucgContributors';
-import { slugify } from '../../data/utils';
+import { slugify, normalizeEmployerKey } from '../../data/utils';
 import type { ContributorRecord } from '../../data/types';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
@@ -31,16 +31,14 @@ const formatCurrency = (value: number) =>
 const LfucgOverviewPage = () => {
   const { data, loading, error } = useLfucgContributors();
   const recipientSort = useTableSort<'recipient' | 'entries' | 'amount'>('amount');
-  const locationSort = useTableSort<'city' | 'entries' | 'amount'>('entries');
-  const recentSort = useTableSort<'contributor' | 'recipient' | 'amount' | 'date'>('date');
+  const employerSort = useTableSort<'employer' | 'entries' | 'amount'>('amount');
 
-  const { summary, topRecipients, topLocations, recentContributions } = useMemo(() => {
+  const { summary, topRecipients, topEmployers } = useMemo(() => {
     if (!data.length) {
       return {
         summary: { totalAmount: 0, totalContributions: 0, uniqueContributors: 0, uniqueRecipients: 0 },
         topRecipients: [] as Array<{ name: string; total: number; count: number; office: string }>,
-        topLocations: [] as Array<{ location: string; total: number; count: number }>,
-        recentContributions: [] as ContributorRecord[],
+        topEmployers: [] as Array<{ employerKey: string; name: string; total: number; count: number }>,
       };
     }
 
@@ -52,7 +50,7 @@ const LfucgOverviewPage = () => {
     };
 
     const recipientMap = new Map<string, { name: string; total: number; count: number; office: string }>();
-    const locationMap = new Map<string, { location: string; total: number; count: number }>();
+    const employerMap = new Map<string, { employerKey: string; name: string; total: number; count: number }>();
 
     data.forEach((record: ContributorRecord) => {
       const recipientKey = record.recipientFullName || 'Unknown recipient';
@@ -69,31 +67,32 @@ const LfucgOverviewPage = () => {
       }
       recipientMap.set(recipientKey, recipientEntry);
 
-      const locKey = record.city && record.state ? `${record.city}, ${record.state}` : record.location || 'Unknown location';
-      const locEntry = locationMap.get(locKey) ?? { location: locKey, total: 0, count: 0 };
-      locEntry.total += record.amount;
-      locEntry.count += 1;
-      locationMap.set(locKey, locEntry);
+      const employerRaw = record.employer?.trim() || '';
+      const employerKey = normalizeEmployerKey(employerRaw);
+      if (!employerKey) return; // skip unknown / N/A / empty employers entirely
+
+      const existingEmployer = employerMap.get(employerKey);
+      const displayName = existingEmployer?.name || employerRaw;
+      const employerEntry = existingEmployer ?? {
+        employerKey,
+        name: displayName,
+        total: 0,
+        count: 0,
+      };
+      employerEntry.total += record.amount;
+      employerEntry.count += 1;
+      employerMap.set(employerKey, employerEntry);
     });
 
     const topRecipients = Array.from(recipientMap.values())
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
 
-    const topLocations = Array.from(locationMap.values())
+    const topEmployers = Array.from(employerMap.values())
       .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+      .slice(0, 25); // Top 25 employers by number of filings
 
-    const recentContributions = [...data]
-      .filter((record) => record.receiptDate)
-      .sort((a, b) => {
-        const dateA = parseDateValue(a.receiptDate)?.getTime() ?? 0;
-        const dateB = parseDateValue(b.receiptDate)?.getTime() ?? 0;
-        return dateB - dateA;
-      })
-      .slice(0, 6);
-
-    return { summary, topRecipients, topLocations, recentContributions };
+    return { summary, topRecipients, topEmployers };
   }, [data]);
 
   const sortedTopRecipients = useMemo(() => {
@@ -116,13 +115,13 @@ const LfucgOverviewPage = () => {
     return rows;
   }, [recipientSort.sortDirection, recipientSort.sortField, topRecipients]);
 
-  const sortedTopLocations = useMemo(() => {
-    const rows = [...topLocations];
+  const sortedTopEmployers = useMemo(() => {
+    const rows = [...topEmployers];
     rows.sort((a, b) => {
       let comparison = 0;
-      switch (locationSort.sortField) {
-        case 'city':
-          comparison = a.location.localeCompare(b.location, undefined, { sensitivity: 'base' });
+      switch (employerSort.sortField) {
+        case 'employer':
+          comparison = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
           break;
         case 'entries':
           comparison = a.count - b.count;
@@ -131,37 +130,10 @@ const LfucgOverviewPage = () => {
         default:
           comparison = a.total - b.total;
       }
-      return locationSort.sortDirection === 'asc' ? comparison : -comparison;
+      return employerSort.sortDirection === 'asc' ? comparison : -comparison;
     });
     return rows;
-  }, [locationSort.sortDirection, locationSort.sortField, topLocations]);
-
-  const sortedRecentContributions = useMemo(() => {
-    const rows = [...recentContributions];
-    rows.sort((a, b) => {
-      let comparison = 0;
-      switch (recentSort.sortField) {
-        case 'contributor':
-          comparison = a.contributorFullName.localeCompare(b.contributorFullName, undefined, { sensitivity: 'base' });
-          break;
-        case 'recipient':
-          comparison = a.recipientFullName.localeCompare(b.recipientFullName, undefined, { sensitivity: 'base' });
-          break;
-        case 'amount':
-          comparison = a.amount - b.amount;
-          break;
-        case 'date':
-        default: {
-          const timeA = parseDateValue(a.receiptDate || '')?.getTime() ?? 0;
-          const timeB = parseDateValue(b.receiptDate || '')?.getTime() ?? 0;
-          comparison = timeA - timeB;
-          break;
-        }
-      }
-      return recentSort.sortDirection === 'asc' ? comparison : -comparison;
-    });
-    return rows;
-  }, [recentContributions, recentSort.sortDirection, recentSort.sortField]);
+  }, [employerSort.sortDirection, employerSort.sortField, topEmployers]);
 
   if (loading) {
     return (
@@ -288,8 +260,8 @@ const LfucgOverviewPage = () => {
 
       <Box sx={{ mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>Active Locations</Typography>
-          <Chip label="Top 5 by number of filings" size="small" color="primary" variant="outlined" />
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>Top Employers</Typography>
+          <Chip label="Top 25 by number of filings" size="small" color="primary" variant="outlined" />
         </Box>
         <TableContainer component={Paper} elevation={0}>
           <Table size="small">
@@ -297,27 +269,27 @@ const LfucgOverviewPage = () => {
               <TableRow>
                 <TableCell sx={{ fontWeight: 600 }}>
                   <TableSortLabel
-                    active={locationSort.sortField === 'city'}
-                    direction={locationSort.sortField === 'city' ? locationSort.sortDirection : 'asc'}
-                    onClick={() => locationSort.handleSort('city')}
+                    active={employerSort.sortField === 'employer'}
+                    direction={employerSort.sortField === 'employer' ? employerSort.sortDirection : 'asc'}
+                    onClick={() => employerSort.handleSort('employer')}
                   >
-                    City
+                    Employer
                   </TableSortLabel>
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>
                   <TableSortLabel
-                    active={locationSort.sortField === 'entries'}
-                    direction={locationSort.sortField === 'entries' ? locationSort.sortDirection : 'asc'}
-                    onClick={() => locationSort.handleSort('entries')}
+                    active={employerSort.sortField === 'entries'}
+                    direction={employerSort.sortField === 'entries' ? employerSort.sortDirection : 'asc'}
+                    onClick={() => employerSort.handleSort('entries')}
                   >
                     Entries
                   </TableSortLabel>
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>
                   <TableSortLabel
-                    active={locationSort.sortField === 'amount'}
-                    direction={locationSort.sortField === 'amount' ? locationSort.sortDirection : 'asc'}
-                    onClick={() => locationSort.handleSort('amount')}
+                    active={employerSort.sortField === 'amount'}
+                    direction={employerSort.sortField === 'amount' ? employerSort.sortDirection : 'asc'}
+                    onClick={() => employerSort.handleSort('amount')}
                   >
                     Total Amount
                   </TableSortLabel>
@@ -325,81 +297,13 @@ const LfucgOverviewPage = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedTopLocations.map((loc) => (
-                <TableRow key={loc.location} hover>
-                  <TableCell sx={{ fontWeight: 500 }}>{loc.location}</TableCell>
-                  <TableCell>{loc.count.toLocaleString()}</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>{formatCurrency(loc.total)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
-
-      <Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>Most Recent Filings</Typography>
-          <Chip label="Latest 6 entries" size="small" color="primary" variant="outlined" />
-        </Box>
-        <TableContainer component={Paper} elevation={0}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 600 }}>
-                  <TableSortLabel
-                    active={recentSort.sortField === 'contributor'}
-                    direction={recentSort.sortField === 'contributor' ? recentSort.sortDirection : 'asc'}
-                    onClick={() => recentSort.handleSort('contributor')}
-                  >
-                    Contributor
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>
-                  <TableSortLabel
-                    active={recentSort.sortField === 'recipient'}
-                    direction={recentSort.sortField === 'recipient' ? recentSort.sortDirection : 'asc'}
-                    onClick={() => recentSort.handleSort('recipient')}
-                  >
-                    Recipient
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>
-                  <TableSortLabel
-                    active={recentSort.sortField === 'amount'}
-                    direction={recentSort.sortField === 'amount' ? recentSort.sortDirection : 'asc'}
-                    onClick={() => recentSort.handleSort('amount')}
-                  >
-                    Amount
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>
-                  <TableSortLabel
-                    active={recentSort.sortField === 'date'}
-                    direction={recentSort.sortField === 'date' ? recentSort.sortDirection : 'asc'}
-                    onClick={() => recentSort.handleSort('date')}
-                  >
-                    Receipt Date
-                  </TableSortLabel>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sortedRecentContributions.map((record) => (
-                <TableRow key={record.id} hover>
-                  <TableCell>
-                    <Typography component="div" sx={{ fontWeight: 600 }}>
-                      <Link to={`/lfucg/contributors/${slugify(record.contributorFullName)}`}>{record.contributorFullName}</Link>
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {record.city ? `${record.city}, ${record.state}` : record.location}
-                    </Typography>
-                  </TableCell>
+              {sortedTopEmployers.map((employer) => (
+                <TableRow key={employer.employerKey} hover>
                   <TableCell sx={{ fontWeight: 500 }}>
-                    <Link to={`/lfucg/recipients/${slugify(record.recipientFullName)}`}>{record.recipientFullName}</Link>
+                    <Link to={`/lfucg/employers/${slugify(employer.name || 'Unknown employer')}`}>{employer.name}</Link>
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>{formatCurrency(record.amount)}</TableCell>
-                  <TableCell>{record.receiptDate || '—'}</TableCell>
+                  <TableCell>{employer.count.toLocaleString()}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{formatCurrency(employer.total)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

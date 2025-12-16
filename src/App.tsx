@@ -13,6 +13,7 @@ import LfucgContributorsPage from './routes/lfucg/LfucgContributorsPage';
 import LfucgContributorDetailPage from './routes/lfucg/LfucgContributorDetailPage';
 import LfucgRecipientsPage from './routes/lfucg/LfucgRecipientsPage';
 import LfucgRecipientDetailPage from './routes/lfucg/LfucgRecipientDetailPage';
+import LfucgEmployerDetailPage from './routes/lfucg/LfucgEmployerDetailPage';
 import { LfucgContributorsProvider } from './hooks/useLfucgContributors';
 import lfucgTheme from './lfucgTheme';
 
@@ -31,6 +32,7 @@ const App = () => {
                 <Route path="/contributors/:slug" element={<LfucgContributorDetailPage />} />
                 <Route path="/recipients" element={<LfucgRecipientsPage />} />
                 <Route path="/recipients/:slug" element={<LfucgRecipientDetailPage />} />
+                <Route path="/employers/:slug" element={<LfucgEmployerDetailPage />} />
                 <Route path="*" element={<Navigate to="/lfucg" replace />} />
               </Routes>
             </LfucgLayout>
