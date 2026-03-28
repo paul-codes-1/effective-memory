@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Layout from './components/Layout';
@@ -15,44 +15,63 @@ import LfucgRecipientsPage from './routes/lfucg/LfucgRecipientsPage';
 import LfucgRecipientDetailPage from './routes/lfucg/LfucgRecipientDetailPage';
 import LfucgEmployerDetailPage from './routes/lfucg/LfucgEmployerDetailPage';
 import { LfucgContributorsProvider } from './hooks/useLfucgContributors';
+import { ContributorsProvider } from './hooks/useContributors';
 import lfucgTheme from './lfucgTheme';
+
+/** Redirect old /lfucg/* URLs to their new root equivalents */
+const LfucgRedirect = () => {
+  const { pathname } = useLocation();
+  const newPath = pathname.replace(/^\/lfucg(?=\/|$)/, '') || '/';
+  return <Navigate to={newPath} replace />;
+};
 
 const App = () => {
   return (
     <Routes>
-      {/* LFUCG 2026 Primary Portal */}
-      <Route path="/lfucg/*" element={
-        <ThemeProvider theme={lfucgTheme}>
-          <CssBaseline />
-          <LfucgContributorsProvider>
-            <LfucgLayout>
-              <Routes>
-                <Route path="/" element={<LfucgOverviewPage />} />
-                <Route path="/contributors" element={<LfucgContributorsPage />} />
-                <Route path="/contributors/:slug" element={<LfucgContributorDetailPage />} />
-                <Route path="/recipients" element={<LfucgRecipientsPage />} />
-                <Route path="/recipients/:slug" element={<LfucgRecipientDetailPage />} />
-                <Route path="/employers/:slug" element={<LfucgEmployerDetailPage />} />
-                <Route path="*" element={<Navigate to="/lfucg" replace />} />
-              </Routes>
-            </LfucgLayout>
-          </LfucgContributorsProvider>
-        </ThemeProvider>
-      } />
+      {/* Backward-compat: redirect old /lfucg paths to root */}
+      <Route path="/lfucg/*" element={<LfucgRedirect />} />
 
-      {/* Historical Data (2022-2024) */}
-      <Route path="/*" element={
-        <Layout>
-          <Routes>
-            <Route path="/" element={<OverviewPage />} />
-            <Route path="/contributors" element={<ContributorsPage />} />
-            <Route path="/contributors/:slug" element={<ContributorDetailPage />} />
-            <Route path="/recipients" element={<RecipientsPage />} />
-            <Route path="/recipients/:slug" element={<RecipientDetailPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
-      } />
+      {/* Historical Data (2022-2024) — archived */}
+      <Route
+        path="/archive/*"
+        element={
+          <ContributorsProvider>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<OverviewPage />} />
+                <Route path="/contributors" element={<ContributorsPage />} />
+                <Route path="/contributors/:slug" element={<ContributorDetailPage />} />
+                <Route path="/recipients" element={<RecipientsPage />} />
+                <Route path="/recipients/:slug" element={<RecipientDetailPage />} />
+                <Route path="*" element={<Navigate to="/archive" replace />} />
+              </Routes>
+            </Layout>
+          </ContributorsProvider>
+        }
+      />
+
+      {/* LFUCG 2026 Primary Portal — now the root */}
+      <Route
+        path="/*"
+        element={
+          <ThemeProvider theme={lfucgTheme}>
+            <CssBaseline />
+            <LfucgContributorsProvider>
+              <LfucgLayout>
+                <Routes>
+                  <Route path="/" element={<LfucgOverviewPage />} />
+                  <Route path="/contributors" element={<LfucgContributorsPage />} />
+                  <Route path="/contributors/:slug" element={<LfucgContributorDetailPage />} />
+                  <Route path="/recipients" element={<LfucgRecipientsPage />} />
+                  <Route path="/recipients/:slug" element={<LfucgRecipientDetailPage />} />
+                  <Route path="/employers/:slug" element={<LfucgEmployerDetailPage />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </LfucgLayout>
+            </LfucgContributorsProvider>
+          </ThemeProvider>
+        }
+      />
     </Routes>
   );
 };

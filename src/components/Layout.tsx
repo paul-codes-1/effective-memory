@@ -1,10 +1,9 @@
-import React, { PropsWithChildren, useState } from 'react';
+import { PropsWithChildren, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
-import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import Typography from '@mui/material/Typography';
 import Drawer from '@mui/material/Drawer';
@@ -15,32 +14,38 @@ import ListItemText from '@mui/material/ListItemText';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
-import SearchInput from './SearchInput';
+import Chip from '@mui/material/Chip';
 
-const navItems = [
-  { to: '/', label: 'Overview', end: true },
-  { to: '/contributors', label: 'Contributors' },
-  { to: '/recipients', label: 'Recipients' },
+const navItems: { to: string; label: string; end?: boolean }[] = [
+  { to: '/archive', label: 'Overview', end: true },
+  { to: '/archive/contributors', label: 'Contributors' },
+  { to: '/archive/recipients', label: 'Recipients' },
 ];
 
 const Layout = ({ children }: PropsWithChildren) => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
 
   const handleDrawerToggle = () => {
     setMobileOpen((prev) => !prev);
   };
 
   const drawer = (
-    <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
-      <Typography variant="h6" sx={{ my: 2 }}>
-        Local Contributors
-      </Typography>
-      <List>
+    <Box sx={{ width: 260 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
+        <Typography variant="h6">Local Contributors</Typography>
+        <IconButton onClick={handleDrawerToggle} size="small">
+          <CloseIcon />
+        </IconButton>
+      </Box>
+      <List onClick={handleDrawerToggle}>
         {navItems.map((item) => (
           <ListItem key={item.to} disablePadding>
-            <ListItemButton component={NavLink} to={item.to} end={(item as any).end}>
+            <ListItemButton
+              component={NavLink}
+              to={item.to}
+              end={item.end}
+              sx={{ '&.active': { bgcolor: 'action.selected', fontWeight: 700 } }}
+            >
               <ListItemText primary={item.label} />
             </ListItemButton>
           </ListItem>
@@ -57,25 +62,25 @@ const Layout = ({ children }: PropsWithChildren) => {
             <MenuIcon />
           </IconButton>
 
-          {/* Mobile search toggle - visible only on xs */}
-          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', mr: 1 }}>
-            {mobileSearchOpen ? (
-              <IconButton color="inherit" onClick={() => setMobileSearchOpen(false)} sx={{ mr: 1 }}>
-                <CloseIcon />
-              </IconButton>
-            ) : (
-              <IconButton color="inherit" onClick={() => setMobileSearchOpen(true)} sx={{ mr: 1 }}>
-                <SearchIcon />
-              </IconButton>
-            )}
-          </Box>
-
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Local Contributors Dashboard
-            <Typography component="span" variant="caption" sx={{ ml: 1, opacity: 0.8, display: { xs: 'none', sm: 'inline' } }}>
-              (2022-2024 Historical Data)
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6" component="div" sx={{ fontSize: { xs: '0.95rem', sm: '1.25rem' } }}>
+              Local Contributors Dashboard
             </Typography>
-          </Typography>
+            <Chip
+              label="ARCHIVED"
+              size="small"
+              sx={{
+                bgcolor: 'rgba(255,255,255,0.2)',
+                color: 'white',
+                fontWeight: 700,
+                fontSize: '0.65rem',
+                height: 20,
+              }}
+            />
+            <Typography component="span" variant="caption" sx={{ opacity: 0.8, display: { xs: 'none', sm: 'inline' } }}>
+              2022-2024
+            </Typography>
+          </Box>
 
           {/* Desktop nav */}
           <Box sx={{ display: { xs: 'none', md: 'block' } }}>
@@ -84,7 +89,7 @@ const Layout = ({ children }: PropsWithChildren) => {
                 key={item.to}
                 component={NavLink}
                 to={item.to}
-                end={(item as any).end}
+                end={item.end}
                 color="inherit"
                 sx={{ color: 'common.white', fontWeight: 600 }}
               >
@@ -93,15 +98,6 @@ const Layout = ({ children }: PropsWithChildren) => {
             ))}
           </Box>
         </Toolbar>
-
-        {/* Inline mobile search bar shown under the toolbar when open */}
-        {mobileSearchOpen && (
-          <Box sx={{ display: { xs: 'block', md: 'none' }, px: 2, pb: 2 }}>
-            <Container maxWidth="lg">
-              <SearchInput label="" placeholder="Search contributors, recipients, cities..." value={searchValue} onChange={setSearchValue} />
-            </Container>
-          </Box>
-        )}
       </AppBar>
 
       <Drawer anchor="left" open={mobileOpen} onClose={handleDrawerToggle} ModalProps={{ keepMounted: true }}>
@@ -114,16 +110,19 @@ const Layout = ({ children }: PropsWithChildren) => {
 
       <Box component="footer" sx={{ borderTop: '1px solid', borderColor: 'divider', py: 3 }}>
         <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 2,
+            }}
+          >
             <Typography variant="body2" color="text.secondary">
-              Data sourced from local filings · Built with React & Vite
+              Data sourced from local filings
             </Typography>
-            <Button
-              component={NavLink}
-              to="/lfucg"
-              variant="contained"
-              size="small"
-            >
+            <Button component={NavLink} to="/" variant="contained" size="small">
               View 2026 LFUCG Primary Data
             </Button>
           </Box>

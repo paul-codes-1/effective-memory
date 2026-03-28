@@ -11,13 +11,7 @@ import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
-import TableContainer from '@mui/material/TableContainer';
-import Table from '@mui/material/Table';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import TableCell from '@mui/material/TableCell';
-import TableBody from '@mui/material/TableBody';
-import TableSortLabel from '@mui/material/TableSortLabel';
+import ResponsiveTable, { ColumnDef } from '../../components/ResponsiveTable';
 
 const formatCurrency = (value: number) =>
   value.toLocaleString('en-US', {
@@ -39,7 +33,6 @@ const LfucgRecipientsPage = () => {
   const { data, loading, error } = useLfucgContributors();
   const [search, setSearch] = useState('');
   const [officeFilter, setOfficeFilter] = useState('all');
-  // sortField now supports amount, recipient name, and contributor count
   const [sortField, setSortField] = useState<'amount' | 'recipient' | 'contributors'>('amount');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -55,7 +48,9 @@ const LfucgRecipientsPage = () => {
   };
 
   const offices = useMemo(() => {
-    return Array.from(new Set(data.map((record) => record.officeSought))).filter(Boolean).sort();
+    return Array.from(new Set(data.map((record) => record.officeSought)))
+      .filter(Boolean)
+      .sort();
   }, [data]);
 
   const aggregates = useMemo<RecipientAggregate[]>(() => {
@@ -67,17 +62,16 @@ const LfucgRecipientsPage = () => {
 
     data.forEach((record) => {
       const key = record.recipientFullName || 'Unknown recipient';
-      const existing =
-        map.get(key) ?? {
-          name: key,
-          total: 0,
-          count: 0,
-          office: record.officeSought,
-          topEmployer: '',
-          topEmployerAmount: 0,
-          employerCounts: {},
-          employerAmounts: {},
-        };
+      const existing = map.get(key) ?? {
+        name: key,
+        total: 0,
+        count: 0,
+        office: record.officeSought,
+        topEmployer: '',
+        topEmployerAmount: 0,
+        employerCounts: {},
+        employerAmounts: {},
+      };
       existing.total += record.amount;
       existing.count += 1;
       if (!existing.office && record.officeSought) {
@@ -88,7 +82,9 @@ const LfucgRecipientsPage = () => {
       if (employer && employer.toLowerCase() !== 'retired') {
         existing.employerCounts[employer] = (existing.employerCounts[employer] ?? 0) + 1;
         existing.employerAmounts[employer] = (existing.employerAmounts[employer] ?? 0) + record.amount;
-        const currentTopEmployerAmount = existing.topEmployer ? existing.employerAmounts[existing.topEmployer] ?? 0 : 0;
+        const currentTopEmployerAmount = existing.topEmployer
+          ? (existing.employerAmounts[existing.topEmployer] ?? 0)
+          : 0;
         if (existing.employerAmounts[employer] > currentTopEmployerAmount) {
           existing.topEmployer = employer;
           existing.topEmployerAmount = existing.employerAmounts[employer];
@@ -98,7 +94,7 @@ const LfucgRecipientsPage = () => {
     });
 
     return Array.from(map.values())
-      .map(({ employerCounts, employerAmounts, ...rest }) => rest)
+      .map(({ employerCounts: _ec, employerAmounts: _ea, ...rest }) => rest)
       .sort((a, b) => b.total - a.total);
   }, [data]);
 
@@ -132,8 +128,40 @@ const LfucgRecipientsPage = () => {
     return entries;
   }, [filteredAggregates, sortDirection, sortField]);
 
+  const columns: ColumnDef<RecipientAggregate>[] = [
+    {
+      key: 'recipient',
+      label: 'Recipient',
+      sortField: 'recipient',
+      primary: true,
+      render: (entry) => <Link to={`/recipients/${slugify(entry.name)}`}>{entry.name}</Link>,
+    },
+    { key: 'office', label: 'Office', hideOnMobile: true, render: (entry) => entry.office || '—' },
+    { key: 'entries', label: 'Entries', sortField: 'contributors', render: (entry) => entry.count.toLocaleString() },
+    {
+      key: 'amount',
+      label: 'Total Amount',
+      sortField: 'amount',
+      highlight: true,
+      render: (entry) => formatCurrency(entry.total),
+    },
+    {
+      key: 'average',
+      label: 'Average',
+      hideOnMobile: true,
+      render: (entry) => formatCurrency(entry.total / entry.count),
+    },
+    {
+      key: 'topEmployer',
+      label: 'Top Employer',
+      hideOnMobile: true,
+      render: (entry) =>
+        entry.topEmployer ? `${entry.topEmployer} (${formatCurrency(entry.topEmployerAmount)})` : '—',
+    },
+  ];
+
   if (loading) {
-    return <Paper sx={{ p: 2, bgcolor: 'info.light' }}>Loading recipient rollups…</Paper>;
+    return <Paper sx={{ p: 2, bgcolor: 'info.light' }}>Loading recipient rollups...</Paper>;
   }
 
   if (error) {
@@ -152,8 +180,8 @@ const LfucgRecipientsPage = () => {
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' },
-          gap: 2,
+          gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(12, 1fr)' },
+          gap: { xs: 1, md: 2 },
           my: 1,
           alignItems: 'center',
         }}
@@ -162,7 +190,7 @@ const LfucgRecipientsPage = () => {
           <SearchInput label="Search" placeholder="Recipient name" value={search} onChange={setSearch} />
         </Box>
 
-        <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 3' } }}>
+        <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 3' } }}>
           <FormControl fullWidth size="small">
             <InputLabel>Office</InputLabel>
             <Select value={officeFilter} label="Office" onChange={(e) => setOfficeFilter(e.target.value)}>
@@ -176,7 +204,7 @@ const LfucgRecipientsPage = () => {
           </FormControl>
         </Box>
 
-        <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 3' } }}>
+        <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 3' } }}>
           <FormControl fullWidth size="small">
             <InputLabel>Sort</InputLabel>
             <Select
@@ -191,7 +219,7 @@ const LfucgRecipientsPage = () => {
           </FormControl>
         </Box>
 
-        <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 2' } }}>
+        <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 2' } }}>
           <Button
             fullWidth
             size="small"
@@ -203,62 +231,15 @@ const LfucgRecipientsPage = () => {
         </Box>
       </Box>
 
-      <TableContainer component={Paper} sx={{ mt: 1 }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>
-                <TableSortLabel
-                  active={sortField === 'recipient'}
-                  direction={sortField === 'recipient' ? sortDirection : 'asc'}
-                  onClick={() => handleSort('recipient')}
-                >
-                  Recipient
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>Office</TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={sortField === 'contributors'}
-                  direction={sortField === 'contributors' ? sortDirection : 'asc'}
-                  onClick={() => handleSort('contributors')}
-                >
-                  Entries
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={sortField === 'amount'}
-                  direction={sortField === 'amount' ? sortDirection : 'asc'}
-                  onClick={() => handleSort('amount')}
-                >
-                  Total Amount
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>Average</TableCell>
-              <TableCell>Top Employer</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedAggregates.slice(0, 200).map((entry) => (
-              <TableRow key={entry.name} hover>
-                <TableCell>
-                  <Link to={`/lfucg/recipients/${slugify(entry.name)}`}>{entry.name}</Link>
-                </TableCell>
-                <TableCell>{entry.office || '—'}</TableCell>
-                <TableCell>{entry.count.toLocaleString()}</TableCell>
-                <TableCell>{formatCurrency(entry.total)}</TableCell>
-                <TableCell>{formatCurrency(entry.total / entry.count)}</TableCell>
-                <TableCell>
-                  {entry.topEmployer
-                    ? `${entry.topEmployer} (${formatCurrency(entry.topEmployerAmount)})`
-                    : '—'}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <ResponsiveTable
+        columns={columns}
+        rows={sortedAggregates.slice(0, 200)}
+        getRowKey={(entry) => entry.name}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={handleSort}
+        sx={{ mt: 1 }}
+      />
 
       {sortedAggregates.length > 200 && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>

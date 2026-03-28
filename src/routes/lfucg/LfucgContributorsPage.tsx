@@ -4,6 +4,13 @@ import SearchInput from '../../components/SearchInput';
 import { useLfucgContributors } from '../../hooks/useLfucgContributors';
 import { slugify } from '../../data/utils';
 import type { ContributorRecord } from '../../data/types';
+import {
+  filterRecords,
+  buildContributorEmployerMap,
+  filterTotals,
+  sortRecords,
+  sortTotals,
+} from '../../data/filterContributors';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import ToggleButton from '@mui/material/ToggleButton';
@@ -21,8 +28,9 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import TableBody from '@mui/material/TableBody';
-import TableSortLabel from '@mui/material/TableSortLabel';
 import useTableSort from '../../hooks/useTableSort';
+import ResponsiveTable, { ColumnDef } from '../../components/ResponsiveTable';
+import type { ContributorTotal } from '../../data/types';
 
 const formatCurrency = (value: number) =>
   value.toLocaleString('en-US', {
@@ -43,7 +51,7 @@ const LfucgContributorsPage = () => {
   const [modeFilter, setModeFilter] = useState('all');
   const [viewMode, setViewMode] = useState<ViewMode>('totals');
   const [fanOutMode, setFanOutMode] = useState(false);
-  const sort = useTableSort<SortField>('amount');
+  const { sortField, sortDirection, setSortField, handleSort, toggleDirection } = useTableSort<SortField>('amount');
 
   useEffect(() => {
     if (viewMode === 'records' && fanOutMode) {
@@ -53,159 +61,63 @@ const LfucgContributorsPage = () => {
 
   useEffect(() => {
     const allowedFields = viewMode === 'totals' ? TOTALS_SORT_FIELDS : RECORD_SORT_FIELDS;
-    if (!allowedFields.includes(sort.sortField)) {
-      sort.setSortField(allowedFields[0]);
+    if (!allowedFields.includes(sortField)) {
+      setSortField(allowedFields[0]);
     }
-  }, [sort.sortField, viewMode]);
+  }, [sortField, viewMode, setSortField]);
 
   const contributionTypes = useMemo(() => {
-    return Array.from(new Set(data.map((record) => record.contributionType))).filter(Boolean).sort();
+    return Array.from(new Set(data.map((record) => record.contributionType)))
+      .filter(Boolean)
+      .sort();
   }, [data]);
 
   const contributionModes = useMemo(() => {
-    return Array.from(new Set(data.map((record) => record.contributionMode))).filter(Boolean).sort();
+    return Array.from(new Set(data.map((record) => record.contributionMode)))
+      .filter(Boolean)
+      .sort();
   }, [data]);
 
   const searchValue = search.trim().toLowerCase();
 
-  const filteredData = useMemo(() => {
-    return data.filter((record) => {
-      const matchesSearch = searchValue
-        ? [
-            record.contributorFullName,
-            record.employer,
-            record.occupation,
-          ]
-            .filter(Boolean)
-            .some((field) => field.toLowerCase().includes(searchValue))
-        : true;
+  const filteredData = useMemo(
+    () => filterRecords(data, { searchValue, typeFilter, modeFilter }),
+    [data, modeFilter, searchValue, typeFilter],
+  );
 
-      const matchesType = typeFilter === 'all' || record.contributionType === typeFilter;
-      const matchesMode = modeFilter === 'all' || record.contributionMode === modeFilter;
+  const contributorEmployers = useMemo(() => buildContributorEmployerMap(data), [data]);
 
-      return matchesSearch && matchesType && matchesMode;
-    });
-  }, [data, modeFilter, searchValue, typeFilter]);
-
-  const contributorEmployers = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-    data.forEach((record) => {
-      if (!record.identityKey) {
-        return;
-      }
-      const key = record.identityKey;
-      if (!map.has(key)) {
-        map.set(key, new Set());
-      }
-      if (record.employer) {
-        map.get(key)!.add(record.employer.toLowerCase());
-      }
-    });
-    return map;
-  }, [data]);
-
-  const filteredTotals = useMemo(() => {
-    const entries = Object.values(totals);
-    if (!searchValue) {
-      return entries;
-    }
-    return entries.filter((entry) => {
-      if (entry.fullName.toLowerCase().includes(searchValue)) {
-        return true;
-      }
-      const employers = contributorEmployers.get(entry.key);
-      if (!employers) {
-        return false;
-      }
-      for (const employer of employers) {
-        if (employer.includes(searchValue)) {
-          return true;
-        }
-      }
-      return false;
-    });
-  }, [contributorEmployers, searchValue, totals]);
+  const filteredTotals = useMemo(
+    () => filterTotals(Object.values(totals), searchValue, contributorEmployers),
+    [contributorEmployers, searchValue, totals],
+  );
 
   const totalDisplayedAmount = useMemo(() => {
-    if (viewMode === 'totals') {
-      return filteredTotals.reduce((sum, entry) => sum + entry.totalAmount, 0);
-    }
+    if (viewMode === 'totals') return filteredTotals.reduce((sum, entry) => sum + entry.totalAmount, 0);
     return filteredData.reduce((sum, record) => sum + record.amount, 0);
   }, [filteredData, filteredTotals, viewMode]);
 
-  const sortedRecords = useMemo(() => {
-    const records = [...filteredData];
-    records.sort((a, b) => {
-      let comparison = 0;
-      switch (sort.sortField) {
-        case 'amount':
-          comparison = a.amount - b.amount;
-          break;
-        case 'contributor':
-          comparison = a.contributorFullName.localeCompare(b.contributorFullName, undefined, { sensitivity: 'base' });
-          break;
-        case 'recipient':
-          comparison = a.recipientFullName.localeCompare(b.recipientFullName, undefined, { sensitivity: 'base' });
-          break;
-        default:
-          comparison = 0;
-      }
-      return sort.sortDirection === 'asc' ? comparison : -comparison;
-    });
-    return records;
-  }, [filteredData, sort.sortDirection, sort.sortField]);
+  const sortedRecords = useMemo(
+    () => sortRecords(filteredData, sortField as 'amount' | 'contributor' | 'recipient', sortDirection),
+    [filteredData, sortDirection, sortField],
+  );
 
-  const sortedTotals = useMemo(() => {
-    const entries = [...filteredTotals];
-    entries.sort((a, b) => {
-      let comparison = 0;
-      switch (sort.sortField) {
-        case 'contributor':
-          comparison = a.fullName.localeCompare(b.fullName, undefined, { sensitivity: 'base' });
-          break;
-        case 'entries':
-          comparison = a.contributionCount - b.contributionCount;
-          break;
-        case 'amount':
-        default:
-          comparison = a.totalAmount - b.totalAmount;
-      }
-      return sort.sortDirection === 'asc' ? comparison : -comparison;
-    });
-    return entries;
-  }, [filteredTotals, sort.sortDirection, sort.sortField]);
+  const sortedTotals = useMemo(
+    () => sortTotals(filteredTotals, sortField as 'amount' | 'contributor' | 'entries', sortDirection),
+    [filteredTotals, sortDirection, sortField],
+  );
 
   const fanOutData = useMemo(() => {
-    if (!fanOutMode || viewMode !== 'totals') {
-      return [];
-    }
+    if (!fanOutMode || viewMode !== 'totals') return [];
     const contributorKeys = new Set(filteredTotals.map((entry) => entry.key));
-    if (!contributorKeys.size) {
-      return [];
-    }
+    if (!contributorKeys.size) return [];
 
-    const grouped = new Map<
-      string,
-      {
-        dateLabel: string;
-        totalAmount: number;
-        entries: ContributorRecord[];
-      }
-    >();
-
+    const grouped = new Map<string, { dateLabel: string; totalAmount: number; entries: ContributorRecord[] }>();
     data.forEach((record) => {
-      const key = slugify(record.contributorFullName);
-      if (!contributorKeys.has(key)) {
-        return;
-      }
+      const key = record.identityKey;
+      if (!contributorKeys.has(key)) return;
       const dateLabel = record.receiptDate || 'No receipt date';
-      const group =
-        grouped.get(dateLabel) ??
-        {
-          dateLabel,
-          totalAmount: 0,
-          entries: [],
-        };
+      const group = grouped.get(dateLabel) ?? { dateLabel, totalAmount: 0, entries: [] };
       group.totalAmount += record.amount;
       group.entries.push(record);
       grouped.set(dateLabel, group);
@@ -224,14 +136,108 @@ const LfucgContributorsPage = () => {
       value === 'amount'
         ? 'Amount'
         : value === 'contributor'
-        ? 'Contributor'
-        : value === 'recipient'
-        ? 'Recipient'
-        : 'Entries',
+          ? 'Contributor'
+          : value === 'recipient'
+            ? 'Recipient'
+            : 'Entries',
   }));
 
+  const totalsColumns: ColumnDef<ContributorTotal>[] = [
+    {
+      key: 'contributor',
+      label: 'Contributor',
+      sortField: 'contributor',
+      primary: true,
+      render: (entry) => (
+        <>
+          <Link to={`/contributors/${entry.key}`}>{entry.fullName}</Link>
+          {(entry.occupation || entry.employer) && (
+            <Box sx={{ mt: 0.5, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+              {entry.occupation && <Chip label={entry.occupation} size="small" />}
+              {entry.employer && <Chip label={entry.employer} size="small" />}
+            </Box>
+          )}
+        </>
+      ),
+    },
+    {
+      key: 'amount',
+      label: 'Total Amount',
+      sortField: 'amount',
+      highlight: true,
+      render: (entry) => formatCurrency(entry.totalAmount),
+    },
+    {
+      key: 'entries',
+      label: 'Entries',
+      sortField: 'entries',
+      render: (entry) => entry.contributionCount.toLocaleString(),
+    },
+  ];
+
+  const recordsColumns: ColumnDef<ContributorRecord>[] = [
+    {
+      key: 'contributor',
+      label: 'Contributor',
+      sortField: 'contributor',
+      primary: true,
+      render: (record) => (
+        <>
+          <Typography sx={{ fontWeight: 700 }}>
+            <Link to={`/contributors/${slugify(record.contributorFullName)}`}>{record.contributorFullName}</Link>
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {record.occupation || 'Occupation N/A'}
+          </Typography>
+          {(record.isAnonymous || record.isNameMissing) && (
+            <Chip
+              label={record.isAnonymous ? 'Anonymous filing' : 'Name unavailable'}
+              size="small"
+              color="warning"
+              sx={{ mt: 0.5 }}
+            />
+          )}
+        </>
+      ),
+    },
+    {
+      key: 'recipient',
+      label: 'Recipient',
+      sortField: 'recipient',
+      render: (record) => record.recipientFullName,
+    },
+    { key: 'office', label: 'Office', hideOnMobile: true, render: (record) => record.officeSought || '—' },
+    {
+      key: 'amount',
+      label: 'Amount',
+      sortField: 'amount',
+      highlight: true,
+      render: (record) => formatCurrency(record.amount),
+    },
+    {
+      key: 'type',
+      label: 'Type / Mode',
+      hideOnMobile: true,
+      render: (record) => (
+        <>
+          <Chip label={record.contributionType || 'Unspecified'} size="small" />
+          <Typography variant="body2" color="text.secondary">
+            {record.contributionMode || '—'}
+          </Typography>
+        </>
+      ),
+    },
+    {
+      key: 'location',
+      label: 'Location',
+      hideOnMobile: true,
+      render: (record) => (record.city ? `${record.city}, ${record.state}` : record.location || '—'),
+    },
+    { key: 'date', label: 'Receipt Date', render: (record) => record.receiptDate || '—' },
+  ];
+
   if (loading) {
-    return <Paper sx={{ p: 2, bgcolor: 'info.light' }}>Loading contributor data…</Paper>;
+    return <Paper sx={{ p: 2, bgcolor: 'info.light' }}>Loading contributor data...</Paper>;
   }
 
   if (error) {
@@ -240,10 +246,10 @@ const LfucgContributorsPage = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
         <Typography variant="h5">Contributors</Typography>
 
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
           <ToggleButtonGroup
             value={viewMode}
             exclusive
@@ -255,26 +261,42 @@ const LfucgContributorsPage = () => {
             <ToggleButton value="records">Records</ToggleButton>
           </ToggleButtonGroup>
 
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
             {viewMode === 'totals'
-              ? `Showing ${filteredTotals.length.toLocaleString()} of ${Object.keys(totals).length.toLocaleString()} contributors`
-              : `Showing ${filteredData.length.toLocaleString()} of ${data.length.toLocaleString()} records`}{' '}
+              ? `${filteredTotals.length.toLocaleString()} of ${Object.keys(totals).length.toLocaleString()} contributors`
+              : `${filteredData.length.toLocaleString()} of ${data.length.toLocaleString()} records`}{' '}
             · <strong>{formatCurrency(totalDisplayedAmount)}</strong>
           </Typography>
         </Box>
       </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' }, gap: 2, my: 1, alignItems: 'center' }}>
+      {/* Mobile count summary */}
+      <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, mt: 0.5 }}>
+        {viewMode === 'totals'
+          ? `${filteredTotals.length.toLocaleString()} contributors`
+          : `${filteredData.length.toLocaleString()} records`}{' '}
+        · <strong>{formatCurrency(totalDisplayedAmount)}</strong>
+      </Typography>
+
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(12, 1fr)' },
+          gap: { xs: 1, md: 2 },
+          my: 1,
+          alignItems: 'center',
+        }}
+      >
         <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 4' } }}>
           <SearchInput label="Search" placeholder="Name, employer, or occupation" value={search} onChange={setSearch} />
         </Box>
 
         {viewMode === 'records' && (
           <>
-            <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 2' } }}>
+            <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
               <FormControl fullWidth size="small">
-                <InputLabel>Contribution Type</InputLabel>
-                <Select value={typeFilter} label="Contribution Type" onChange={(e) => setTypeFilter(e.target.value)}>
+                <InputLabel>Type</InputLabel>
+                <Select value={typeFilter} label="Type" onChange={(e) => setTypeFilter(e.target.value)}>
                   <MenuItem value="all">All types</MenuItem>
                   {contributionTypes.map((type) => (
                     <MenuItem key={type} value={type}>
@@ -285,10 +307,10 @@ const LfucgContributorsPage = () => {
               </FormControl>
             </Box>
 
-            <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 2' } }}>
+            <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
               <FormControl fullWidth size="small">
-                <InputLabel>Contribution Mode</InputLabel>
-                <Select value={modeFilter} label="Contribution Mode" onChange={(e) => setModeFilter(e.target.value)}>
+                <InputLabel>Mode</InputLabel>
+                <Select value={modeFilter} label="Mode" onChange={(e) => setModeFilter(e.target.value)}>
                   <MenuItem value="all">All modes</MenuItem>
                   {contributionModes.map((mode) => (
                     <MenuItem key={mode} value={mode}>
@@ -301,10 +323,10 @@ const LfucgContributorsPage = () => {
           </>
         )}
 
-        <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 2' } }}>
+        <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
           <FormControl fullWidth size="small">
             <InputLabel>Sort</InputLabel>
-            <Select value={sort.sortField} label="Sort" onChange={(e) => sort.setSortField(e.target.value as SortField)}>
+            <Select value={sortField} label="Sort" onChange={(e) => setSortField(e.target.value as SortField)}>
               {sortOptions.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
                   {option.label}
@@ -314,15 +336,20 @@ const LfucgContributorsPage = () => {
           </FormControl>
         </Box>
 
-        <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 1' } }}>
-          <Button fullWidth size="small" variant="outlined" onClick={sort.toggleDirection}>
-            {sort.sortDirection === 'asc' ? 'Asc' : 'Desc'}
+        <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
+          <Button fullWidth size="small" variant="outlined" onClick={toggleDirection}>
+            {sortDirection === 'asc' ? 'Asc' : 'Desc'}
           </Button>
         </Box>
 
         {viewMode === 'totals' && (
           <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 3' } }}>
-            <Button fullWidth size="small" variant={fanOutMode ? 'contained' : 'outlined'} onClick={() => setFanOutMode((p) => !p)}>
+            <Button
+              fullWidth
+              size="small"
+              variant={fanOutMode ? 'contained' : 'outlined'}
+              onClick={() => setFanOutMode((p) => !p)}
+            >
               {fanOutMode ? 'Hide grouped dates' : 'Show grouped dates'}
             </Button>
           </Box>
@@ -331,56 +358,15 @@ const LfucgContributorsPage = () => {
 
       {viewMode === 'totals' ? (
         <>
-          <TableContainer component={Paper} sx={{ mt: 1 }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <TableSortLabel
-                      active={sort.sortField === 'contributor'}
-                      direction={sort.sortField === 'contributor' ? sort.sortDirection : 'asc'}
-                      onClick={() => sort.handleSort('contributor')}
-                    >
-                      Contributor
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell>
-                    <TableSortLabel
-                      active={sort.sortField === 'amount'}
-                      direction={sort.sortField === 'amount' ? sort.sortDirection : 'asc'}
-                      onClick={() => sort.handleSort('amount')}
-                    >
-                      Total Amount
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell>
-                    <TableSortLabel
-                      active={sort.sortField === 'entries'}
-                      direction={sort.sortField === 'entries' ? sort.sortDirection : 'asc'}
-                      onClick={() => sort.handleSort('entries')}
-                    >
-                      Entries
-                    </TableSortLabel>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {sortedTotals.slice(0, 500).map((entry) => (
-                  <TableRow key={entry.key} hover>
-                    <TableCell>
-                      <Link to={`/lfucg/contributors/${entry.key}`}>{entry.fullName}</Link>
-                      <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                        <Chip label={entry.occupation || 'Unspecified'} size="small" />
-                        <Chip label={entry.employer || 'Unspecified'} size="small" />
-                      </Box>
-                    </TableCell>
-                    <TableCell>{formatCurrency(entry.totalAmount)}</TableCell>
-                    <TableCell>{entry.contributionCount.toLocaleString()}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <ResponsiveTable
+            columns={totalsColumns}
+            rows={sortedTotals.slice(0, 500)}
+            getRowKey={(entry) => entry.key}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={handleSort}
+            sx={{ mt: 1 }}
+          />
 
           {sortedTotals.length > 500 && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -395,11 +381,21 @@ const LfucgContributorsPage = () => {
                 Totals below aggregate every contribution that matches your current filters, grouped by receipt date.
               </Typography>
 
-              {fanOutData.length === 0 && <Typography variant="body2">No contributions match your current filters.</Typography>}
+              {fanOutData.length === 0 && (
+                <Typography variant="body2">No contributions match your current filters.</Typography>
+              )}
 
               {fanOutData.slice(0, 50).map((group) => (
-                <Paper key={group.dateLabel} sx={{ p: 2, mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                <Paper key={group.dateLabel} sx={{ p: { xs: 1.5, md: 2 }, mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: 1,
+                    }}
+                  >
                     <Box>
                       <Typography sx={{ fontWeight: 700 }}>{group.dateLabel}</Typography>
                       <Typography variant="body2" color="text.secondary">
@@ -414,26 +410,34 @@ const LfucgContributorsPage = () => {
                       <TableHead>
                         <TableRow>
                           <TableCell>Contributor</TableCell>
-                          <TableCell>Recipient</TableCell>
+                          <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Recipient</TableCell>
                           <TableCell>Amount</TableCell>
-                          <TableCell>Type / Mode</TableCell>
+                          <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Type / Mode</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {group.entries.map((record) => (
                           <TableRow key={record.id} hover>
                             <TableCell>
-                              <Link to={`/lfucg/contributors/${slugify(record.contributorFullName)}`}>{record.contributorFullName}</Link>
-                              <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                <Chip label={record.occupation || 'Unspecified'} size="small" />
-                                <Chip label={record.employer || 'Unspecified'} size="small" />
-                              </Box>
+                              <Link to={`/contributors/${slugify(record.contributorFullName)}`}>
+                                {record.contributorFullName}
+                              </Link>
+                              {(record.occupation || record.employer) && (
+                                <Box sx={{ mt: 0.5, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                                  {record.occupation && <Chip label={record.occupation} size="small" />}
+                                  {record.employer && <Chip label={record.employer} size="small" />}
+                                </Box>
+                              )}
                             </TableCell>
-                            <TableCell>{record.recipientFullName}</TableCell>
+                            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                              {record.recipientFullName}
+                            </TableCell>
                             <TableCell>{formatCurrency(record.amount)}</TableCell>
-                            <TableCell>
+                            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                               <Chip label={record.contributionType || 'Unspecified'} size="small" />
-                              <Typography variant="body2" color="text.secondary">{record.contributionMode || '—'}</Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {record.contributionMode || '—'}
+                              </Typography>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -453,80 +457,15 @@ const LfucgContributorsPage = () => {
         </>
       ) : (
         <>
-          <TableContainer component={Paper} sx={{ mt: 1 }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <TableSortLabel
-                      active={sort.sortField === 'contributor'}
-                      direction={sort.sortField === 'contributor' ? sort.sortDirection : 'asc'}
-                      onClick={() => sort.handleSort('contributor')}
-                    >
-                      Contributor
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell>
-                    <TableSortLabel
-                      active={sort.sortField === 'recipient'}
-                      direction={sort.sortField === 'recipient' ? sort.sortDirection : 'asc'}
-                      onClick={() => sort.handleSort('recipient')}
-                    >
-                      Recipient
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell>Office</TableCell>
-                  <TableCell>
-                    <TableSortLabel
-                      active={sort.sortField === 'amount'}
-                      direction={sort.sortField === 'amount' ? sort.sortDirection : 'asc'}
-                      onClick={() => sort.handleSort('amount')}
-                    >
-                      Amount
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell>Type / Mode</TableCell>
-                  <TableCell>Location</TableCell>
-                  <TableCell>Receipt Date</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {sortedRecords.slice(0, 500).map((record) => (
-                  <TableRow key={record.id} hover>
-                    <TableCell>
-                      <Typography sx={{ fontWeight: 700 }}>
-                        <Link to={`/lfucg/contributors/${slugify(record.contributorFullName)}`}>{record.contributorFullName}</Link>
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {record.occupation || 'Occupation N/A'}
-                      </Typography>
-                      <Box sx={{ mt: 0.5, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                        {record.occupation && <Chip label={record.occupation} size="small" />}
-                        {record.employer && <Chip label={record.employer} size="small" color="primary" variant="outlined" />}
-                      </Box>
-                      {(record.isAnonymous || record.isNameMissing) && (
-                        <Chip
-                          label={record.isAnonymous ? 'Anonymous filing' : 'Name unavailable'}
-                          size="small"
-                          color="warning"
-                          sx={{ mt: 0.5 }}
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell>{record.recipientFullName}</TableCell>
-                    <TableCell>{record.officeSought || '—'}</TableCell>
-                    <TableCell>{formatCurrency(record.amount)}</TableCell>
-                    <TableCell>
-                      <Chip label={record.contributionType || 'Unspecified'} size="small" />
-                      <Typography variant="body2" color="text.secondary">{record.contributionMode || '—'}</Typography>
-                    </TableCell>
-                    <TableCell>{record.city ? `${record.city}, ${record.state}` : record.location || '—'}</TableCell>
-                    <TableCell>{record.receiptDate || '—'}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <ResponsiveTable
+            columns={recordsColumns}
+            rows={sortedRecords.slice(0, 500)}
+            getRowKey={(record) => record.id}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={handleSort}
+            sx={{ mt: 1 }}
+          />
 
           {sortedRecords.length > 500 && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -540,4 +479,3 @@ const LfucgContributorsPage = () => {
 };
 
 export default LfucgContributorsPage;
-

@@ -16,7 +16,7 @@ const useTableSort = <Field extends string>(defaultField: Field, defaultDirectio
         return field;
       });
     },
-    [defaultDirection]
+    [defaultDirection],
   );
 
   const handleSort = useCallback(
@@ -30,7 +30,7 @@ const useTableSort = <Field extends string>(defaultField: Field, defaultDirectio
         return field;
       });
     },
-    [defaultDirection]
+    [defaultDirection],
   );
 
   const toggleDirection = useCallback(() => {

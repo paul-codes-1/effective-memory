@@ -52,11 +52,15 @@ const ContributorsPage = () => {
   }, [fanOutMode, sortField, viewMode]);
 
   const contributionTypes = useMemo(() => {
-    return Array.from(new Set(data.map((record) => record.contributionType))).filter(Boolean).sort();
+    return Array.from(new Set(data.map((record) => record.contributionType)))
+      .filter(Boolean)
+      .sort();
   }, [data]);
 
   const contributionModes = useMemo(() => {
-    return Array.from(new Set(data.map((record) => record.contributionMode))).filter(Boolean).sort();
+    return Array.from(new Set(data.map((record) => record.contributionMode)))
+      .filter(Boolean)
+      .sort();
   }, [data]);
 
   const searchValue = search.trim().toLowerCase();
@@ -192,13 +196,11 @@ const ContributorsPage = () => {
         return;
       }
       const dateLabel = record.receiptDate || 'No receipt date';
-      const group =
-        grouped.get(dateLabel) ??
-        {
-          dateLabel,
-          totalAmount: 0,
-          entries: [],
-        };
+      const group = grouped.get(dateLabel) ?? {
+        dateLabel,
+        totalAmount: 0,
+        entries: [],
+      };
       group.totalAmount += record.amount;
       group.entries.push(record);
       grouped.set(dateLabel, group);
@@ -257,9 +259,22 @@ const ContributorsPage = () => {
         </Box>
       </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' }, gap: 2, my: 1, alignItems: 'center' }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' },
+          gap: 2,
+          my: 1,
+          alignItems: 'center',
+        }}
+      >
         <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 4' } }}>
-          <SearchInput label="Search" placeholder="Contributor, city, office, recipient" value={search} onChange={setSearch} />
+          <SearchInput
+            label="Search"
+            placeholder="Contributor, city, office, recipient"
+            value={search}
+            onChange={setSearch}
+          />
         </Box>
 
         {viewMode === 'records' && (
@@ -308,14 +323,24 @@ const ContributorsPage = () => {
         </Box>
 
         <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 1' } }}>
-          <Button fullWidth size="small" variant="outlined" onClick={() => setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))}>
+          <Button
+            fullWidth
+            size="small"
+            variant="outlined"
+            onClick={() => setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))}
+          >
             {sortDirection === 'asc' ? 'Asc' : 'Desc'}
           </Button>
         </Box>
 
         {viewMode === 'totals' && (
           <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 3' } }}>
-            <Button fullWidth size="small" variant={fanOutMode ? 'contained' : 'outlined'} onClick={() => setFanOutMode((p) => !p)}>
+            <Button
+              fullWidth
+              size="small"
+              variant={fanOutMode ? 'contained' : 'outlined'}
+              onClick={() => setFanOutMode((p) => !p)}
+            >
               {fanOutMode ? 'Hide grouped dates' : 'Show grouped dates'}
             </Button>
           </Box>
@@ -337,7 +362,7 @@ const ContributorsPage = () => {
                 {sortedTotals.slice(0, 500).map((entry) => (
                   <TableRow key={entry.key} hover>
                     <TableCell>
-                      <Link to={`/contributors/${entry.key}`}>{entry.fullName}</Link>
+                      <Link to={`/archive/contributors/${entry.key}`}>{entry.fullName}</Link>
                     </TableCell>
                     <TableCell>{formatCurrency(entry.totalAmount)}</TableCell>
                     <TableCell>{entry.contributionCount.toLocaleString()}</TableCell>
@@ -360,11 +385,21 @@ const ContributorsPage = () => {
                 Totals below aggregate every contribution that matches your current filters, grouped by receipt date.
               </Typography>
 
-              {fanOutData.length === 0 && <Typography variant="body2">No contributions match your current filters.</Typography>}
+              {fanOutData.length === 0 && (
+                <Typography variant="body2">No contributions match your current filters.</Typography>
+              )}
 
               {fanOutData.slice(0, 50).map((group) => (
                 <Paper key={group.dateLabel} sx={{ p: 2, mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: 1,
+                    }}
+                  >
                     <Box>
                       <Typography sx={{ fontWeight: 700 }}>{group.dateLabel}</Typography>
                       <Typography variant="body2" color="text.secondary">
@@ -388,7 +423,9 @@ const ContributorsPage = () => {
                         {group.entries.map((record) => (
                           <TableRow key={record.id} hover>
                             <TableCell>
-                              <Link to={`/contributors/${slugify(record.contributorFullName)}`}>{record.contributorFullName}</Link>
+                              <Link to={`/archive/contributors/${slugify(record.contributorFullName)}`}>
+                                {record.contributorFullName}
+                              </Link>
                               <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                 <Chip label={record.occupation || 'Unspecified'} size="small" />
                                 <Chip label={record.employer || 'Unspecified'} size="small" />
@@ -398,7 +435,9 @@ const ContributorsPage = () => {
                             <TableCell>{formatCurrency(record.amount)}</TableCell>
                             <TableCell>
                               <Chip label={record.contributionType || 'Unspecified'} size="small" />
-                              <Typography variant="body2" color="text.secondary">{record.contributionMode || '—'}</Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {record.contributionMode || '—'}
+                              </Typography>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -436,7 +475,9 @@ const ContributorsPage = () => {
                   <TableRow key={record.id} hover>
                     <TableCell>
                       <Typography sx={{ fontWeight: 700 }}>
-                        <Link to={`/contributors/${slugify(record.contributorFullName)}`}>{record.contributorFullName}</Link>
+                        <Link to={`/archive/contributors/${slugify(record.contributorFullName)}`}>
+                          {record.contributorFullName}
+                        </Link>
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         {record.occupation || 'Occupation N/A'}
@@ -447,7 +488,9 @@ const ContributorsPage = () => {
                     <TableCell>{formatCurrency(record.amount)}</TableCell>
                     <TableCell>
                       <Chip label={record.contributionType || 'Unspecified'} size="small" />
-                      <Typography variant="body2" color="text.secondary">{record.contributionMode || '—'}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {record.contributionMode || '—'}
+                      </Typography>
                     </TableCell>
                     <TableCell>{record.city ? `${record.city}, ${record.state}` : record.location || '—'}</TableCell>
                     <TableCell>{record.receiptDate || '—'}</TableCell>

@@ -26,7 +26,13 @@ const RecipientDetailPage = () => {
 
   const { contributions, recipientName, totalAmount, contributors, offices } = useMemo(() => {
     if (!slug) {
-      return { contributions: [], recipientName: '', totalAmount: 0, contributors: new Set<string>(), offices: new Set<string>() };
+      return {
+        contributions: [],
+        recipientName: '',
+        totalAmount: 0,
+        contributors: new Set<string>(),
+        offices: new Set<string>(),
+      };
     }
     const filtered = data.filter((record) => slugify(record.recipientFullName) === slug);
     const name = filtered[0]?.recipientFullName || slug.replace(/-/g, ' ');
@@ -49,7 +55,7 @@ const RecipientDetailPage = () => {
       <Box>
         <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'error.dark' }}>No filings found for this recipient.</Paper>
         <Box sx={{ mt: 2 }}>
-          <Link to="/recipients">← Back to recipients</Link>
+          <Link to="/archive/recipients">← Back to recipients</Link>
         </Box>
       </Box>
     );
@@ -58,29 +64,49 @@ const RecipientDetailPage = () => {
   return (
     <Box>
       <Box sx={{ mb: 2 }}>
-        <Link to="/recipients" style={{ textDecoration: 'none' }}>
-          <Typography variant="body2" color="text.secondary">← Back to recipients</Typography>
+        <Link to="/archive/recipients" style={{ textDecoration: 'none' }}>
+          <Typography variant="body2" color="text.secondary">
+            ← Back to recipients
+          </Typography>
         </Link>
       </Box>
 
-      <Typography variant="h4" sx={{ mb: 0.5 }}>{recipientName}</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{contributors.size} contributors · {contributions.length} filings</Typography>
+      <Typography variant="h4" sx={{ mb: 0.5 }}>
+        {recipientName}
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        {contributors.size} contributors · {contributions.length} filings
+      </Typography>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3,1fr)' }, gap: 2, mb: 2 }}>
         <Paper sx={{ p: 2 }}>
-          <Typography variant="overline" color="text.secondary">Total Raised</Typography>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>{formatCurrency(totalAmount)}</Typography>
+          <Typography variant="overline" color="text.secondary">
+            Total Raised
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            {formatCurrency(totalAmount)}
+          </Typography>
         </Paper>
 
         <Paper sx={{ p: 2 }}>
-          <Typography variant="overline" color="text.secondary">Contributors</Typography>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>{contributors.size.toLocaleString()}</Typography>
-          <Typography variant="body2" color="text.secondary">{Array.from(contributors).slice(0, 3).join(', ') || '—'}</Typography>
+          <Typography variant="overline" color="text.secondary">
+            Contributors
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            {contributors.size.toLocaleString()}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {Array.from(contributors).slice(0, 3).join(', ') || '—'}
+          </Typography>
         </Paper>
 
         <Paper sx={{ p: 2 }}>
-          <Typography variant="overline" color="text.secondary">Office</Typography>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>{offices.size ? Array.from(offices)[0] : '—'}</Typography>
+          <Typography variant="overline" color="text.secondary">
+            Office
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            {offices.size ? Array.from(offices)[0] : '—'}
+          </Typography>
         </Paper>
       </Box>
 
@@ -104,13 +130,19 @@ const RecipientDetailPage = () => {
               {contributions.map((record) => (
                 <TableRow key={record.id} hover>
                   <TableCell>
-                    <Link to={`/contributors/${slugify(record.contributorFullName)}`}>{record.contributorFullName}</Link>
-                    <Typography variant="body2" color="text.secondary">{record.occupation || 'Occupation N/A'}</Typography>
+                    <Link to={`/archive/contributors/${slugify(record.contributorFullName)}`}>
+                      {record.contributorFullName}
+                    </Link>
+                    <Typography variant="body2" color="text.secondary">
+                      {record.occupation || 'Occupation N/A'}
+                    </Typography>
                   </TableCell>
                   <TableCell>{formatCurrency(record.amount)}</TableCell>
                   <TableCell>
                     <Chip label={record.contributionType || 'Unspecified'} size="small" />
-                    <Typography variant="body2" color="text.secondary">{record.contributionMode || '—'}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {record.contributionMode || '—'}
+                    </Typography>
                   </TableCell>
                   <TableCell>{record.city ? `${record.city}, ${record.state}` : record.location || '—'}</TableCell>
                   <TableCell>{record.receiptDate || '—'}</TableCell>

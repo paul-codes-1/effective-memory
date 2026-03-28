@@ -23,3 +23,7 @@ amplify/team-provider-info.json
 src/aws-exports.js
 aws-exports.js
 .idea/
+
+# Test outputs
+test-results/
+playwright-report/

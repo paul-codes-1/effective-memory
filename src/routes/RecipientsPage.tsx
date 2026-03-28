@@ -41,7 +41,9 @@ const RecipientsPage = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const offices = useMemo(() => {
-    return Array.from(new Set(data.map((record) => record.officeSought))).filter(Boolean).sort();
+    return Array.from(new Set(data.map((record) => record.officeSought)))
+      .filter(Boolean)
+      .sort();
   }, [data]);
 
   const aggregates = useMemo<RecipientAggregate[]>(() => {
@@ -105,10 +107,20 @@ const RecipientsPage = () => {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
         <Typography variant="h5">Recipients</Typography>
-        <Typography variant="body2" color="text.secondary">{filteredAggregates.length.toLocaleString()} recipients shown</Typography>
+        <Typography variant="body2" color="text.secondary">
+          {filteredAggregates.length.toLocaleString()} recipients shown
+        </Typography>
       </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' }, gap: 2, my: 1, alignItems: 'center' }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' },
+          gap: 2,
+          my: 1,
+          alignItems: 'center',
+        }}
+      >
         <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 4' } }}>
           <SearchInput label="Search" placeholder="Recipient name" value={search} onChange={setSearch} />
         </Box>
@@ -119,7 +131,9 @@ const RecipientsPage = () => {
             <Select value={officeFilter} label="Office" onChange={(e) => setOfficeFilter(e.target.value)}>
               <MenuItem value="all">All offices</MenuItem>
               {offices.map((office) => (
-                <MenuItem key={office} value={office}>{office || 'Not listed'}</MenuItem>
+                <MenuItem key={office} value={office}>
+                  {office || 'Not listed'}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
@@ -128,7 +142,11 @@ const RecipientsPage = () => {
         <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 3' } }}>
           <FormControl fullWidth size="small">
             <InputLabel>Sort</InputLabel>
-            <Select value={sortField} label="Sort" onChange={(e) => setSortField(e.target.value as 'amount' | 'recipient')}>
+            <Select
+              value={sortField}
+              label="Sort"
+              onChange={(e) => setSortField(e.target.value as 'amount' | 'recipient')}
+            >
               <MenuItem value="amount">Amount</MenuItem>
               <MenuItem value="recipient">Recipient</MenuItem>
             </Select>
@@ -136,7 +154,12 @@ const RecipientsPage = () => {
         </Box>
 
         <Box sx={{ gridColumn: { xs: 'span 6', md: 'span 2' } }}>
-          <Button fullWidth size="small" variant="outlined" onClick={() => setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))}>
+          <Button
+            fullWidth
+            size="small"
+            variant="outlined"
+            onClick={() => setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))}
+          >
             {sortDirection === 'asc' ? 'Asc' : 'Desc'}
           </Button>
         </Box>
@@ -158,7 +181,7 @@ const RecipientsPage = () => {
             {sortedAggregates.slice(0, 200).map((entry) => (
               <TableRow key={entry.name} hover>
                 <TableCell>
-                  <Link to={`/recipients/${slugify(entry.name)}`}>{entry.name}</Link>
+                  <Link to={`/archive/recipients/${slugify(entry.name)}`}>{entry.name}</Link>
                 </TableCell>
                 <TableCell>{entry.office || '—'}</TableCell>
                 <TableCell>{entry.count.toLocaleString()}</TableCell>

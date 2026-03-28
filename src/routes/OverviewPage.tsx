@@ -62,7 +62,8 @@ const OverviewPage = () => {
       }
       recipientMap.set(recipientKey, recipientEntry);
 
-      const locKey = record.city && record.state ? `${record.city}, ${record.state}` : record.location || 'Unknown location';
+      const locKey =
+        record.city && record.state ? `${record.city}, ${record.state}` : record.location || 'Unknown location';
       const locEntry = locationMap.get(locKey) ?? { location: locKey, total: 0, count: 0 };
       locEntry.total += record.amount;
       locEntry.count += 1;
@@ -90,24 +91,23 @@ const OverviewPage = () => {
   }, [data]);
 
   if (loading) {
-    return (
-      <Paper sx={{ p: 2, bgcolor: 'info.light' }}>
-        Loading contributor data…
-      </Paper>
-    );
+    return <Paper sx={{ p: 2, bgcolor: 'info.light' }}>Loading contributor data…</Paper>;
   }
 
   if (error) {
-    return (
-      <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'error.dark' }}>
-        {error}
-      </Paper>
-    );
+    return <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'error.dark' }}>{error}</Paper>;
   }
 
   return (
     <Box>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(4,1fr)' }, gap: 2, mb: 2 }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(4,1fr)' },
+          gap: 2,
+          mb: 2,
+        }}
+      >
         <Paper sx={{ p: 2 }} elevation={1}>
           <Typography variant="overline" color="text.secondary">
             Total Volume

@@ -8,15 +8,8 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
-import TableContainer from '@mui/material/TableContainer';
-import Table from '@mui/material/Table';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import TableCell from '@mui/material/TableCell';
-import TableBody from '@mui/material/TableBody';
-import TableSortLabel from '@mui/material/TableSortLabel';
-import Alert from '@mui/material/Alert';
 import useTableSort from '../../hooks/useTableSort';
+import ResponsiveTable, { ColumnDef } from '../../components/ResponsiveTable';
 
 const formatCurrency = (value: number) =>
   value.toLocaleString('en-US', {
@@ -41,8 +34,6 @@ const LfucgEmployerDetailPage = () => {
       };
     }
 
-    // First, find the normalized employer key that corresponds to this slug,
-    // using the same display-name + slug logic as the overview page.
     const employerKeyBySlug = (() => {
       const employerMap = new Map<string, { key: string; name: string }>();
       data.forEach((record) => {
@@ -121,6 +112,39 @@ const LfucgEmployerDetailPage = () => {
 
   const isDefaultSort = sort.sortField === 'amount' && sort.sortDirection === 'desc';
 
+  const columns: ColumnDef<ContributorRecord>[] = [
+    {
+      key: 'contributor',
+      label: 'Contributor',
+      sortField: 'contributor',
+      primary: true,
+      render: (record) => (
+        <>
+          <Link to={`/contributors/${slugify(record.contributorFullName)}`}>{record.contributorFullName}</Link>
+          <Typography variant="body2" color="text.secondary">
+            {record.occupation || 'Occupation N/A'}
+          </Typography>
+        </>
+      ),
+    },
+    {
+      key: 'recipient',
+      label: 'Recipient',
+      sortField: 'recipient',
+      render: (record) => (
+        <Link to={`/recipients/${slugify(record.recipientFullName)}`}>{record.recipientFullName}</Link>
+      ),
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      sortField: 'amount',
+      highlight: true,
+      render: (record) => formatCurrency(record.amount),
+    },
+    { key: 'date', label: 'Receipt Date', sortField: 'date', render: (record) => record.receiptDate || '—' },
+  ];
+
   if (loading) {
     return <Paper sx={{ p: 2, bgcolor: 'info.light' }}>Loading employer details</Paper>;
   }
@@ -134,7 +158,7 @@ const LfucgEmployerDetailPage = () => {
       <Box>
         <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'error.dark' }}>No filings found for this employer.</Paper>
         <Box sx={{ mt: 2 }}>
-          <Link to="/lfucg"> Back to overview</Link>
+          <Link to="/">Back to overview</Link>
         </Box>
       </Box>
     );
@@ -142,31 +166,56 @@ const LfucgEmployerDetailPage = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-        <Link to="/lfucg" style={{ textDecoration: 'none' }}>
+      <Box
+        sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}
+      >
+        <Link to="/" style={{ textDecoration: 'none' }}>
           <Typography variant="body2" color="text.secondary">
-             Back to overview
+            Back to overview
           </Typography>
         </Link>
       </Box>
 
-      <Typography variant="h4" sx={{ mb: 0.5 }}>{employerName}</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{contributors.size} contributors - {contributions.length} filings</Typography>
+      <Typography variant="h4" sx={{ mb: 0.5, fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2.125rem' } }}>
+        {employerName}
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        {contributors.size} contributors - {contributions.length} filings
+      </Typography>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3,1fr)' }, gap: 2, mb: 2 }}>
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="overline" color="text.secondary">Total Given</Typography>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>{formatCurrency(totalAmount)}</Typography>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3,1fr)' },
+          gap: { xs: 1, md: 2 },
+          mb: 2,
+        }}
+      >
+        <Paper sx={{ p: { xs: 1.5, md: 2 } }}>
+          <Typography variant="overline" color="text.secondary">
+            Total Given
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            {formatCurrency(totalAmount)}
+          </Typography>
         </Paper>
 
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="overline" color="text.secondary">Contributors</Typography>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>{contributors.size.toLocaleString()}</Typography>
+        <Paper sx={{ p: { xs: 1.5, md: 2 } }}>
+          <Typography variant="overline" color="text.secondary">
+            Contributors
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            {contributors.size.toLocaleString()}
+          </Typography>
         </Paper>
 
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="overline" color="text.secondary">Recipients</Typography>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>{recipients.size.toLocaleString()}</Typography>
+        <Paper sx={{ p: { xs: 1.5, md: 2 }, gridColumn: { xs: '1 / -1', sm: 'auto' } }}>
+          <Typography variant="overline" color="text.secondary">
+            Recipients
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            {recipients.size.toLocaleString()}
+          </Typography>
         </Paper>
       </Box>
 
@@ -180,69 +229,17 @@ const LfucgEmployerDetailPage = () => {
             </Button>
           </Box>
         </Box>
-        <TableContainer component={Paper}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <TableSortLabel
-                    active={sort.sortField === 'contributor'}
-                    direction={sort.sortField === 'contributor' ? sort.sortDirection : 'asc'}
-                    onClick={() => sort.handleSort('contributor')}
-                  >
-                    Contributor
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={sort.sortField === 'recipient'}
-                    direction={sort.sortField === 'recipient' ? sort.sortDirection : 'asc'}
-                    onClick={() => sort.handleSort('recipient')}
-                  >
-                    Recipient
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={sort.sortField === 'amount'}
-                    direction={sort.sortField === 'amount' ? sort.sortDirection : 'asc'}
-                    onClick={() => sort.handleSort('amount')}
-                  >
-                    Amount
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={sort.sortField === 'date'}
-                    direction={sort.sortField === 'date' ? sort.sortDirection : 'asc'}
-                    onClick={() => sort.handleSort('date')}
-                  >
-                    Receipt Date
-                  </TableSortLabel>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sortedContributions.map((record) => (
-                <TableRow key={record.id} hover>
-                  <TableCell>
-                    <Link to={`/lfucg/contributors/${slugify(record.contributorFullName)}`}>{record.contributorFullName}</Link>
-                    <Typography variant="body2" color="text.secondary">{record.occupation || 'Occupation N/A'}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Link to={`/lfucg/recipients/${slugify(record.recipientFullName)}`}>{record.recipientFullName}</Link>
-                  </TableCell>
-                  <TableCell>{formatCurrency(record.amount)}</TableCell>
-                  <TableCell>{record.receiptDate || ' d'}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <ResponsiveTable
+          columns={columns}
+          rows={sortedContributions}
+          getRowKey={(record) => record.id}
+          sortField={sort.sortField}
+          sortDirection={sort.sortDirection}
+          onSort={sort.handleSort}
+        />
       </Box>
     </Box>
   );
 };
 
 export default LfucgEmployerDetailPage;
-

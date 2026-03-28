@@ -5,7 +5,6 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import App from './App';
 import './index.css';
-import { ContributorsProvider } from './hooks/useContributors';
 import theme from './theme';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
@@ -13,9 +12,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <BrowserRouter>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <ContributorsProvider>
-          <App />
-        </ContributorsProvider>
+        <App />
       </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>,

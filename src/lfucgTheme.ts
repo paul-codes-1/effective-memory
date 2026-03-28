@@ -1,6 +1,6 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, responsiveFontSizes } from '@mui/material/styles';
 
-const lfucgTheme = createTheme({
+const baseTheme = createTheme({
   palette: {
     mode: 'light',
     background: {
@@ -65,8 +65,36 @@ const lfucgTheme = createTheme({
         },
       },
     },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          '@media (max-width: 600px)': {
+            padding: '6px 8px',
+            fontSize: '0.8125rem',
+          },
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        sizeSmall: {
+          '@media (max-width: 600px)': {
+            height: 22,
+            fontSize: '0.7rem',
+          },
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        sizeSmall: {
+          minHeight: 36,
+        },
+      },
+    },
   },
 });
 
-export default lfucgTheme;
+const lfucgTheme = responsiveFontSizes(baseTheme);
 
+export default lfucgTheme;

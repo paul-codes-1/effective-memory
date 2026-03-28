@@ -1,6 +1,6 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, responsiveFontSizes } from '@mui/material/styles';
 
-const theme = createTheme({
+const baseTheme = createTheme({
   palette: {
     background: {
       default: '#f5f7fb',
@@ -39,7 +39,29 @@ const theme = createTheme({
         },
       },
     },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          '@media (max-width: 600px)': {
+            padding: '6px 8px',
+            fontSize: '0.8125rem',
+          },
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        sizeSmall: {
+          '@media (max-width: 600px)': {
+            height: 22,
+            fontSize: '0.7rem',
+          },
+        },
+      },
+    },
   },
 });
+
+const theme = responsiveFontSizes(baseTheme);
 
 export default theme;
