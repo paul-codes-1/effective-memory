@@ -1,5 +1,5 @@
 import type { ContributorRecord, RawContributorRecord } from './types';
-import { normalize, parseAmount, buildFullName, slugify } from './utils';
+import { normalize, parseAmount, buildFullName, buildIdentityKey } from './utils';
 
 /** Maps a raw LFUCG 2026 contributor record to a typed ContributorRecord. */
 export const mapLfucgRecord = (raw: RawContributorRecord, index: number): ContributorRecord => {
@@ -9,21 +9,53 @@ export const mapLfucgRecord = (raw: RawContributorRecord, index: number): Contri
   const recipientLastName = normalize(raw['Recipient Last Name']);
   const orgName = normalize(raw['From Organization Name']);
   const contributionType = normalize(raw['Contribution Type']);
-  const contributorFullName =
-    buildFullName(contributorFirstName, contributorLastName) ||
-    orgName ||
-    (contributionType === 'ANONYMOUS' ? 'Anonymous' : 'Name unavailable');
+
+  const hasName = !!buildFullName(contributorFirstName, contributorLastName);
   const recipientFullName =
     buildFullName(recipientFirstName, recipientLastName) || normalize(raw['To Organization']) || 'Unknown recipient';
 
-  const identityKey = slugify(contributorFullName) || `missing-${index}`;
+  // Build display name based on contribution type for unnamed records
+  let contributorFullName: string;
+  if (hasName) {
+    contributorFullName = buildFullName(contributorFirstName, contributorLastName);
+  } else if (orgName) {
+    contributorFullName = orgName;
+  } else if (contributionType === 'CANDIDATE') {
+    contributorFullName = `${recipientFullName} (candidate self-funding)`;
+  } else if (contributionType === 'UNITEMIZED') {
+    contributorFullName = `Unitemized contributions to ${recipientFullName}`;
+  } else if (contributionType === 'ANONYMOUS') {
+    contributorFullName = 'Anonymous';
+  } else if (contributionType === 'CASH') {
+    contributorFullName = 'Unnamed cash contribution';
+  } else {
+    contributorFullName = 'Name unavailable';
+  }
+
+  const identityKey = buildIdentityKey({
+    hasName,
+    hasOrg: !!orgName,
+    contributorFullName,
+    contributionType,
+    recipientFullName,
+    index,
+  });
+
   const isAnonymous = contributionType === 'ANONYMOUS';
-  const isNameMissing = !buildFullName(contributorFirstName, contributorLastName) && !orgName;
-  const attributionNote = isAnonymous
-    ? 'Filed as anonymous per campaign finance report.'
-    : isNameMissing
-      ? 'Original filing did not include a contributor name.'
-      : null;
+  const isNameMissing = !hasName && !orgName;
+
+  let attributionNote: string | null = null;
+  if (isAnonymous) {
+    attributionNote = 'Filed as anonymous per campaign finance report.';
+  } else if (contributionType === 'CANDIDATE' && isNameMissing) {
+    attributionNote = "Candidate's own funds contributed to their campaign.";
+  } else if (contributionType === 'UNITEMIZED') {
+    attributionNote = 'Bundled small-dollar contributions below the itemization threshold.';
+  } else if (contributionType === 'CASH' && isNameMissing) {
+    attributionNote = 'Cash contribution without an itemized donor name.';
+  } else if (isNameMissing) {
+    attributionNote = 'Original filing did not include a contributor name.';
+  }
 
   return {
     id: `${index}-${contributorFullName}-${recipientFullName}-${normalize(raw['Receipt Date'])}`,

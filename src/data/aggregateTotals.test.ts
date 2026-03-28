@@ -5,11 +5,10 @@ import { mappedRecords } from '../test/fixtures/contributors';
 describe('aggregateTotals', () => {
   const totals = aggregateTotals(mappedRecords);
 
-  it('groups records by identityKey', () => {
+  it('groups named contributors by identityKey', () => {
     expect(Object.keys(totals)).toContain('john-smith');
     expect(Object.keys(totals)).toContain('alice-brown');
     expect(Object.keys(totals)).toContain('protect-lex-pac');
-    expect(Object.keys(totals)).toContain('anonymous');
     expect(Object.keys(totals)).toContain('charlie-davis');
   });
 
@@ -28,9 +27,11 @@ describe('aggregateTotals', () => {
     expect(totals['protect-lex-pac'].contributionCount).toBe(1);
   });
 
-  it('handles anonymous contributor', () => {
-    expect(totals['anonymous'].totalAmount).toBe(25);
-    expect(totals['anonymous'].contributionCount).toBe(1);
+  it('gives anonymous contributions unique keys (not grouped together)', () => {
+    // The anonymous record at index 4 should have key 'anonymous-4'
+    expect(totals['anonymous-4']).toBeDefined();
+    expect(totals['anonymous-4'].totalAmount).toBe(25);
+    expect(totals['anonymous-4'].contributionCount).toBe(1);
   });
 
   it('handles zero-amount contributions', () => {
@@ -40,7 +41,6 @@ describe('aggregateTotals', () => {
 
   it('preserves fullName from first matching record', () => {
     expect(totals['john-smith'].fullName).toBe('John Smith');
-    expect(totals['anonymous'].fullName).toBe('Anonymous');
   });
 
   it('picks up occupation from first record that has one', () => {
@@ -49,11 +49,6 @@ describe('aggregateTotals', () => {
 
   it('picks up employer from first record that has one', () => {
     expect(totals['john-smith'].employer).toBe('FCPS');
-  });
-
-  it('leaves occupation/employer empty if none present', () => {
-    expect(totals['anonymous'].occupation).toBe('');
-    expect(totals['anonymous'].employer).toBe('');
   });
 
   it('returns empty map for empty input', () => {

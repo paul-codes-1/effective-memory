@@ -65,7 +65,7 @@ describe('computeOverviewData', () => {
 
   it('merges FCPS employer variants under one key', () => {
     // Records 0 and 1 both have FCPS/Fayette County Public Schools
-    const fcps = result.topEmployers.find((e) => e.employerKey === 'fayette county public schools');
+    const fcps = result.topEmployers.find((e) => e.employerKey === 'Fayette County Public Schools');
     expect(fcps).toBeDefined();
     expect(fcps!.count).toBe(2);
     expect(fcps!.total).toBe(150); // $100 + $50

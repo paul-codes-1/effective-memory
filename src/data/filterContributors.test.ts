@@ -68,7 +68,7 @@ describe('buildContributorEmployerMap', () => {
   });
 
   it('does not include empty employers', () => {
-    const anonymous = map.get('anonymous');
+    const anonymous = map.get('anonymous-4');
     expect(anonymous === undefined || anonymous.size === 0).toBe(true);
   });
 });
