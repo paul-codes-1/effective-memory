@@ -20,6 +20,7 @@ const navItems: { to: string; label: string; end?: boolean }[] = [
   { to: '/contributors', label: 'Contributors' },
   { to: '/recipients', label: 'Recipients' },
   { to: '/employers', label: 'Employers' },
+  { to: '/races', label: 'Races' },
 ];
 
 const LfucgLayout = ({ children }: PropsWithChildren) => {
