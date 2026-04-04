@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useLfucgContributors } from '../../hooks/useLfucgContributors';
 import { slugify } from '../../data/utils';
+import EmployerChip from '../../components/EmployerChip';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
@@ -49,6 +50,7 @@ const formatCurrency = (value: number) =>
 
 const LfucgContributorDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { data, loading, error } = useLfucgContributors();
   const sort = useTableSort<'recipient' | 'office' | 'amount' | 'date'>('amount');
 
@@ -195,7 +197,15 @@ const LfucgContributorDetailPage = () => {
           No contributions found for this contributor.
         </Paper>
         <Box sx={{ mt: 2 }}>
-          <Link to="/contributors">Back to contributors</Link>
+          <Link
+            to="#"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate(-1);
+            }}
+          >
+            Go back
+          </Link>
         </Box>
       </Box>
     );
@@ -204,11 +214,14 @@ const LfucgContributorDetailPage = () => {
   return (
     <Box>
       <Box sx={{ mb: 2 }}>
-        <Link to="/contributors" style={{ textDecoration: 'none' }}>
-          <Typography variant="body2" color="text.secondary">
-            Back to contributors
-          </Typography>
-        </Link>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          onClick={() => navigate(-1)}
+          sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+        >
+          &larr; Back
+        </Typography>
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
@@ -225,7 +238,7 @@ const LfucgContributorDetailPage = () => {
             <Chip key={`occ-${occupation}`} label={occupation} size="small" />
           ))}
           {Array.from(employers).map((employer) => (
-            <Chip key={`emp-${employer}`} label={employer} size="small" color="primary" variant="outlined" />
+            <EmployerChip key={`emp-${employer}`} employer={employer} size="small" color="primary" variant="outlined" />
           ))}
         </Box>
       )}

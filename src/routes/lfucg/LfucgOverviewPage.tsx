@@ -95,7 +95,7 @@ const LfucgOverviewPage = () => {
       label: 'Employer',
       sortField: 'employer',
       primary: true,
-      render: (row) => <Link to={`/employers/${slugify(row.name || 'Unknown employer')}`}>{row.name}</Link>,
+      render: (row) => <Link to={`/employers/${slugify(row.employerKey)}`}>{row.name}</Link>,
     },
     { key: 'entries', label: 'Entries', sortField: 'entries', render: (row) => row.count.toLocaleString() },
     {

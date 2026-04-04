@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useLfucgContributors } from '../../hooks/useLfucgContributors';
 import { slugify, normalizeEmployerKey } from '../../data/utils';
 import type { ContributorRecord } from '../../data/types';
@@ -20,6 +20,7 @@ const formatCurrency = (value: number) =>
 
 const LfucgEmployerDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { data, loading, error } = useLfucgContributors();
   const sort = useTableSort<'contributor' | 'recipient' | 'amount' | 'date'>('amount');
 
@@ -45,7 +46,7 @@ const LfucgEmployerDetailPage = () => {
         }
       });
       for (const value of employerMap.values()) {
-        if (slugify(value.name || 'Unknown employer') === slug) {
+        if (slugify(value.key) === slug) {
           return value.key;
         }
       }
@@ -158,7 +159,15 @@ const LfucgEmployerDetailPage = () => {
       <Box>
         <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'error.dark' }}>No filings found for this employer.</Paper>
         <Box sx={{ mt: 2 }}>
-          <Link to="/">Back to overview</Link>
+          <Link
+            to="#"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate(-1);
+            }}
+          >
+            Go back
+          </Link>
         </Box>
       </Box>
     );
@@ -169,11 +178,14 @@ const LfucgEmployerDetailPage = () => {
       <Box
         sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}
       >
-        <Link to="/" style={{ textDecoration: 'none' }}>
-          <Typography variant="body2" color="text.secondary">
-            Back to overview
-          </Typography>
-        </Link>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          onClick={() => navigate(-1)}
+          sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+        >
+          &larr; Back
+        </Typography>
       </Box>
 
       <Typography variant="h4" sx={{ mb: 0.5, fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2.125rem' } }}>

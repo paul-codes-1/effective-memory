@@ -19,6 +19,7 @@ const navItems: { to: string; label: string; end?: boolean }[] = [
   { to: '/', label: 'Overview', end: true },
   { to: '/contributors', label: 'Contributors' },
   { to: '/recipients', label: 'Recipients' },
+  { to: '/employers', label: 'Employers' },
 ];
 
 const LfucgLayout = ({ children }: PropsWithChildren) => {

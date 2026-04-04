@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import SearchInput from '../../components/SearchInput';
 import { useLfucgContributors } from '../../hooks/useLfucgContributors';
 import { slugify } from '../../data/utils';
+import EmployerChip from '../../components/EmployerChip';
 import type { ContributorRecord } from '../../data/types';
 import {
   filterRecords,
@@ -425,7 +426,7 @@ const LfucgContributorsPage = () => {
                               {(record.occupation || record.employer) && (
                                 <Box sx={{ mt: 0.5, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                                   {record.occupation && <Chip label={record.occupation} size="small" />}
-                                  {record.employer && <Chip label={record.employer} size="small" />}
+                                  {record.employer && <EmployerChip employer={record.employer} size="small" />}
                                 </Box>
                               )}
                             </TableCell>

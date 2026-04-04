@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useLfucgContributors } from '../../hooks/useLfucgContributors';
 import { slugify } from '../../data/utils';
 import Box from '@mui/material/Box';
@@ -8,6 +8,7 @@ import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
 import useTableSort from '../../hooks/useTableSort';
+import EmployerChip from '../../components/EmployerChip';
 import ResponsiveTable, { ColumnDef } from '../../components/ResponsiveTable';
 import type { ContributorRecord } from '../../data/types';
 
@@ -50,6 +51,7 @@ const formatCurrency = (value: number) =>
 
 const LfucgRecipientDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { data, loading, error } = useLfucgContributors();
   const sort = useTableSort<'contributor' | 'amount' | 'location' | 'date'>('amount');
 
@@ -122,7 +124,7 @@ const LfucgRecipientDetailPage = () => {
             {record.occupation || 'Occupation N/A'}
           </Typography>
           {record.employer && (
-            <Chip label={record.employer} size="small" color="primary" variant="outlined" sx={{ mt: 0.5 }} />
+            <EmployerChip employer={record.employer} size="small" color="primary" variant="outlined" sx={{ mt: 0.5 }} />
           )}
           {(record.isAnonymous || record.isNameMissing) && (
             <Chip
@@ -181,7 +183,15 @@ const LfucgRecipientDetailPage = () => {
       <Box>
         <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'error.dark' }}>No filings found for this recipient.</Paper>
         <Box sx={{ mt: 2 }}>
-          <Link to="/recipients">Back to recipients</Link>
+          <Link
+            to="#"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate(-1);
+            }}
+          >
+            Go back
+          </Link>
         </Box>
       </Box>
     );
@@ -192,11 +202,14 @@ const LfucgRecipientDetailPage = () => {
       <Box
         sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}
       >
-        <Link to="/recipients" style={{ textDecoration: 'none' }}>
-          <Typography variant="body2" color="text.secondary">
-            Back to recipients
-          </Typography>
-        </Link>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          onClick={() => navigate(-1)}
+          sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+        >
+          &larr; Back
+        </Typography>
         <Button variant="outlined" size="small" component="a" href={krefLink} target="_blank" rel="noreferrer">
           Open KREF search
         </Button>
