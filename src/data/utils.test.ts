@@ -113,7 +113,20 @@ describe('normalizeEmployerKey', () => {
   });
 
   it('passes through other employer names lowercased', () => {
-    expect(normalizeEmployerKey('University of Kentucky')).toBe('university of kentucky');
+    expect(normalizeEmployerKey('Brown & Associates')).toBe('brown & associates');
+  });
+
+  it('merges UK variants with University of Kentucky', () => {
+    expect(normalizeEmployerKey('UK')).toBe('University of Kentucky');
+    expect(normalizeEmployerKey('uk')).toBe('University of Kentucky');
+    expect(normalizeEmployerKey('University of Kentucky')).toBe('University of Kentucky');
+    expect(normalizeEmployerKey('University of kentucky')).toBe('University of Kentucky');
+    expect(normalizeEmployerKey('University of Kentucky ')).toBe('University of Kentucky');
+  });
+
+  it('keeps UK HealthCare and UK Credit Union distinct from University of Kentucky', () => {
+    expect(normalizeEmployerKey('UK HealthCare')).toBe('uk healthcare');
+    expect(normalizeEmployerKey('UK Credit Union')).toBe('uk credit union');
   });
 });
 

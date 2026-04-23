@@ -18,6 +18,8 @@ const EMPLOYER_ALIASES: Record<string, string> = {
   galls: 'Galls',
   'kentucky for kentucky': 'Kentucky for Kentucky',
   'not employed': 'Not Employed',
+  uk: 'University of Kentucky',
+  'university of kentucky': 'University of Kentucky',
 };
 
 /** Strings that indicate "no real employer" — excluded from employer aggregation. */
