@@ -1,4 +1,5 @@
 import { PropsWithChildren, useState } from 'react';
+import AdSlot from './AdSlot';
 import { NavLink } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -106,6 +107,7 @@ const Layout = ({ children }: PropsWithChildren) => {
 
       <Container component="main" sx={{ flex: 1, py: { xs: 2, md: 4 } }} maxWidth="lg">
         {children}
+        <AdSlot slot="8662540292" />
       </Container>
 
       <Box component="footer" sx={{ borderTop: '1px solid', borderColor: 'divider', py: 3 }}>

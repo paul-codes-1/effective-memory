@@ -1,4 +1,5 @@
 import { PropsWithChildren, useState } from 'react';
+import AdSlot from './AdSlot';
 import { NavLink, Link } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -161,6 +162,7 @@ const LfucgLayout = ({ children }: PropsWithChildren) => {
           </Typography>
         </Box>
         {children}
+        <AdSlot slot="8662540292" />
       </Container>
 
       <Box
