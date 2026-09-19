@@ -53,7 +53,7 @@ const App = () => {
         }
       />
 
-      {/* LFUCG 2026 Primary Portal — now the root */}
+      {/* LFUCG 2026 Portal (primary + general) — now the root */}
       <Route
         path="/*"
         element={

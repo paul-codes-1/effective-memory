@@ -18,7 +18,7 @@ export const LfucgContributorsProvider = ({ children }: PropsWithChildren) => {
       try {
         const recordsResponse = await fetch('/data/2026-lfucg-primary-contributions.json');
         if (!recordsResponse.ok) {
-          throw new Error('Failed to load LFUCG 2026 Primary data');
+          throw new Error('Failed to load LFUCG 2026 data');
         }
         const rawData: RawContributorRecord[] = await recordsResponse.json();
         if (!isMounted) return;

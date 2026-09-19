@@ -36,7 +36,7 @@ Source CSV (`combined_contributors.csv`) → Python script (inline in README or 
 Key data files:
 - `public/data/contributors.json` — historical (2022-2024) filtered contribution records
 - `public/data/contributor_totals.json` — precomputed rollups for the historical dataset
-- `public/data/2026-lfucg-primary-contributions.json` — LFUCG 2026 primary contributions
+- `public/data/2026-lfucg-primary-contributions.json` — LFUCG 2026 contributions, primary (5/19) + general (11/3) merged, carryover TRANSFER rows dropped (filename kept for compatibility)
 
 ## Architecture
 

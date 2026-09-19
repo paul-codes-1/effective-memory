@@ -155,10 +155,11 @@ const LfucgLayout = ({ children }: PropsWithChildren) => {
               fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2.125rem' },
             }}
           >
-            2026 LFUCG Primary Election
+            2026 LFUCG Elections
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-            Campaign contribution data for Lexington-Fayette Urban County Government races
+            Campaign contribution data for Lexington-Fayette Urban County Government races: May 19 primary and Nov. 3
+            general
           </Typography>
         </Box>
         {children}

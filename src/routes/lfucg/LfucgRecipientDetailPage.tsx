@@ -19,7 +19,7 @@ const buildKrefLink = (params: { firstName?: string; lastName?: string }) => {
     ReportingFinancialStatementId: '',
     CandidateFirstName: params.firstName?.toLowerCase() || '',
     CandidateLastName: params.lastName?.toLowerCase() || '',
-    ElectionDate: '5/19/2026',
+    ElectionDate: '',
     ElectionType: '',
     FirstName: '',
     LastName: '',
