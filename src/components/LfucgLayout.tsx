@@ -1,4 +1,4 @@
-import { PropsWithChildren, useState } from 'react';
+import { PropsWithChildren, useEffect, useState } from 'react';
 import AdSlot from './AdSlot';
 import { NavLink, Link } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
@@ -15,6 +15,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
+import { formatFreshness, type DataMeta } from '../data/dataMeta';
 
 const navItems: { to: string; label: string; end?: boolean }[] = [
   { to: '/', label: 'Overview', end: true },
@@ -24,8 +25,30 @@ const navItems: { to: string; label: string; end?: boolean }[] = [
   { to: '/races', label: 'Races' },
 ];
 
+// Freshness stamp from public/data/meta.json (written by the refresh generator).
+// Best-effort: if it's missing or malformed the header simply omits the stamp.
+const useDataFreshness = () => {
+  const [freshness, setFreshness] = useState<string | null>(null);
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/data/meta.json')
+      .then((res) => (res.ok ? (res.json() as Promise<DataMeta>) : null))
+      .then((meta) => {
+        if (isMounted) setFreshness(formatFreshness(meta));
+      })
+      .catch(() => {
+        /* no stamp */
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+  return freshness;
+};
+
 const LfucgLayout = ({ children }: PropsWithChildren) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const freshness = useDataFreshness();
 
   const handleDrawerToggle = () => {
     setMobileOpen((prev) => !prev);
@@ -161,6 +184,17 @@ const LfucgLayout = ({ children }: PropsWithChildren) => {
             Campaign contribution data for Lexington-Fayette Urban County Government races: May 19 primary and Nov. 3
             general
           </Typography>
+          {freshness && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              component="p"
+              data-testid="data-freshness"
+              sx={{ mt: 0.5 }}
+            >
+              {freshness}
+            </Typography>
+          )}
         </Box>
         {children}
         <AdSlot slot="8662540292" />

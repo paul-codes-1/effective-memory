@@ -133,7 +133,8 @@ PY
 ├── public/data/                     # JSON data files served to the app
 │   ├── contributors.json            # historical (2022-2024) filtered filings
 │   ├── contributor_totals.json      # precomputed historical contributor rollups
-│   └── 2026-lfucg-primary-contributions.json  # LFUCG 2026 primary data
+│   ├── 2026-lfucg-primary-contributions.json  # LFUCG 2026 primary + general data
+│   └── meta.json                              # freshness stamp for the LFUCG header
 ├── src
 │   ├── App.tsx                      # routing (LFUCG at /, archive at /archive/*)
 │   ├── components/                  # layout, inputs, ResponsiveTable

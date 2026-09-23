@@ -108,7 +108,7 @@ const LfucgOverviewPage = () => {
   ];
 
   if (loading) {
-    return <Paper sx={{ p: 2, bgcolor: 'info.light' }}>Loading 2026 LFUCG Primary data...</Paper>;
+    return <Paper sx={{ p: 2, bgcolor: 'info.light' }}>Loading 2026 LFUCG election data…</Paper>;
   }
 
   if (error) {

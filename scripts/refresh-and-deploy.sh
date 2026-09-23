@@ -1,7 +1,8 @@
 #!/bin/bash
 # Weekly refresh for the LFUCG Contributors Dashboard (app.lexingtonky.news).
-# Re-pulls the current 2026 primary KREF export, regenerates the LFUCG-filtered
-# JSON, and (if it changed) commits + pushes to GitHub. Amplify app
+# Re-pulls the 2026 primary (5/19) + general (11/3) KREF exports, regenerates the
+# LFUCG-filtered JSON + meta.json (freshness stamp), and (if the data changed)
+# commits + pushes to GitHub. Amplify app
 # local-contributors (d3th3t3y3thflm) auto-builds main -> deploys.
 # Cron-safe: absolute paths, no interactive prompts, all output to stdout.
 set -uo pipefail
@@ -55,10 +56,12 @@ find "$ROOT" -maxdepth 1 -name 'export_contributor_*.csv' ! -name "$(basename "$
 
 node public/data/filter-lexington-urban.js || { echo "ABORT: generator failed"; exit 1; }
 
+# Gate on the data file only. The generator rewrites meta.json (generatedAt etc.)
+# only when the data changes, so a no-change run never produces a meta-only commit.
 if git diff --quiet -- public/data/2026-lfucg-primary-contributions.json; then
   echo "no data change; nothing to deploy"; exit 0
 fi
-git add public/data/2026-lfucg-primary-contributions.json
+git add public/data/2026-lfucg-primary-contributions.json public/data/meta.json
 git -c user.name="Paul Oliva" -c user.email="paulmoliva@gmail.com" \
     commit -m "refresh 2026 lfucg data (auto $(date -u +%F))" || { echo "commit failed"; exit 1; }
 git push origin main && echo "pushed -> Amplify will build & deploy"

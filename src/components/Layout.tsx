@@ -125,7 +125,7 @@ const Layout = ({ children }: PropsWithChildren) => {
               Data sourced from local filings
             </Typography>
             <Button component={NavLink} to="/" variant="contained" size="small">
-              View 2026 LFUCG Primary Data
+              View 2026 LFUCG Election Data
             </Button>
           </Box>
         </Container>

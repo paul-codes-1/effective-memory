@@ -4,7 +4,7 @@ test.describe('Route navigation and redirects', () => {
   test('/ loads the LFUCG overview page', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByText('Total Volume')).toBeVisible();
-    await expect(page.getByText('2026 LFUCG Primary Election')).toBeVisible();
+    await expect(page.getByText('2026 LFUCG Elections')).toBeVisible();
   });
 
   test('/contributors loads the LFUCG contributors page', async ({ page }) => {

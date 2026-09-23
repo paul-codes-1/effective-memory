@@ -36,7 +36,8 @@ Source CSV (`combined_contributors.csv`) → Python script (inline in README or 
 Key data files:
 - `public/data/contributors.json` — historical (2022-2024) filtered contribution records
 - `public/data/contributor_totals.json` — precomputed rollups for the historical dataset
-- `public/data/2026-lfucg-primary-contributions.json` — LFUCG 2026 contributions, primary (5/19) + general (11/3) merged, carryover TRANSFER rows dropped (filename kept for compatibility)
+- `public/data/2026-lfucg-primary-contributions.json` — LFUCG 2026 contributions, primary (5/19) + general (11/3) merged, carryover TRANSFER rows dropped (filename kept for compatibility — WP + feeds depend on it; do not rename)
+- `public/data/meta.json` — freshness stamp `{generatedAt, latestReceiptDate, recordCount, elections}` shown in the LFUCG header ("KREF filings through … · refreshed …"). Written by `public/data/filter-lexington-urban.js` only when the data JSON changes; `scripts/refresh-and-deploy.sh` stages it alongside the data
 
 ## Architecture
 

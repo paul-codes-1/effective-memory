@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-09-21T15:50:01.493Z",
+  "latestReceiptDate": "2026-09-04",
+  "recordCount": 3771,
+  "elections": [
+    {
+      "date": "2026-05-19",
+      "type": "PRIMARY",
+      "records": 2763
+    },
+    {
+      "date": "2026-11-03",
+      "type": "GENERAL",
+      "records": 1008
+    }
+  ]
+}
