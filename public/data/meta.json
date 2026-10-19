@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-12T15:50:01.360Z",
+  "generatedAt": "2026-10-19T15:50:01.140Z",
   "latestReceiptDate": "2026-10-04",
-  "recordCount": 3989,
+  "recordCount": 4416,
   "elections": [
     {
       "date": "2026-05-19",
@@ -11,7 +11,7 @@
     {
       "date": "2026-11-03",
       "type": "GENERAL",
-      "records": 1226
+      "records": 1653
     }
   ]
 }
